@@ -2,103 +2,129 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой Автономный ИИ-Агент</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Умный ИИ: Книги, Словари и Поиск</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; display: flex; height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; display: flex; height: 100vh; }
         
-        /* Левая часть: Чат */
         #left-panel { flex: 1.2; display: flex; flex-direction: column; border-right: 2px solid #1e293b; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 10px; line-height: 1.4; }
-        .user { align-self: flex-end; background: #3b82f6; color: white; }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 10px; line-height: 1.5; font-size: 15px; }
+        .user { align-self: flex-end; background: #2563eb; color: white; }
         .ai { align-self: flex-start; background: #1e293b; border: 1px solid #334155; }
-        #input-bar { padding: 15px; background: #0b1120; display: flex; gap: 10px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; }
-        button { padding: 12px 20px; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; }
+        #input-bar { padding: 15px; background: #0b1120; display: flex; gap: 10px; border-top: 1px solid #1e293b; }
+        input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; font-size: 15px; }
+        input:focus { border-color: #3b82f6; }
+        button { padding: 12px 24px; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { background: #059669; }
+        button:disabled { background: #475569; cursor: not-allowed; }
 
-        /* Правая часть: Мысли и серфинг интернета */
         #right-panel { flex: 1; padding: 20px; background: #020617; overflow-y: auto; font-size: 13px; }
         .section-title { color: #38bdf8; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
         .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
-        .site-eval { margin: 6px 0; padding: 6px; border-radius: 4px; background: #1e293b; }
+        .site-eval { margin: 6px 0; padding: 8px; border-radius: 6px; background: #1e293b; font-size: 12px; }
         .site-eval.winner { border-left: 4px solid #10b981; background: #132e27; }
-        .prob-bar { background: #1e293b; margin: 4px 0; padding: 4px 8px; border-radius: 4px; }
-        .prob-fill { background: #38bdf8; height: 3px; border-radius: 2px; margin-top: 4px; }
+        .type-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 6px; text-transform: uppercase; }
+        .tag-book { background: #8b5cf6; color: white; }
+        .tag-dict { background: #f59e0b; color: white; }
+        .tag-wiki { background: #3b82f6; color: white; }
+        .prob-bar { background: #1e293b; margin: 4px 0; padding: 6px 10px; border-radius: 4px; }
+        .prob-fill { background: #38bdf8; height: 4px; border-radius: 2px; margin-top: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- ЧАТ С ИИ -->
+    <!-- СЛЕВА: ЧАТ ДИАЛОГА -->
     <div id="left-panel">
         <div id="chat">
-            <div class="msg ai">Я твой автономный ИИ. Напиши мне что угодно (например, "у меня умерла собака" или "как летают ракеты"). Я сам найду инфу в сети, выберу лучший сайт, прочитаю и отвечу тебе!</div>
+            <div class="msg ai">Привет! Теперь я ищу ответы не только в фактах, но и в <b>Словарях</b> (значения слов) и <b>Книгах / Литературе</b>! Задай мне любой вопрос или напиши слово.</div>
         </div>
         <div id="input-bar">
-            <input type="text" id="userInput" placeholder="Напиши сообщение..." onkeydown="if(event.key==='Enter') startProcess()">
-            <button id="sendBtn" onclick="startProcess()">Отправить</button>
+            <input type="text" id="userInput" placeholder="Спроси что-нибудь или введи слово..." onkeydown="if(event.key==='Enter') startProcess()">
+            <button id="sendBtn" onclick="startProcess()">Спросить</button>
         </div>
     </div>
 
-    <!-- ПАНЕЛЬ МЫШЛЕНИЯ ИИ -->
+    <!-- СПРАВА: МЫСЛИ И ПОИСК В БИБЛИОТЕКАХ -->
     <div id="right-panel">
-        <div class="section-title">🌐 1. Серфинг интернета и выбор сайтов:</div>
-        <div id="search-log" class="card">ИИ ждет запрос для выхода в сеть...</div>
+        <div class="section-title">📚 1. Поиск по Книгам, Словарям и Википедии:</div>
+        <div id="search-log" class="card">Жду запрос...</div>
 
         <div class="section-title">🧠 2. Подбор слов (Вероятности):</div>
-        <div id="brain-log" class="card">Здесь появятся проценты подбора слов...</div>
+        <div id="brain-log" class="card">Здесь будут отображаться вычисления процентов слов...</div>
     </div>
 
     <script>
-        // === КЛАСС МОЗГА ИИ (МАТРИЦА ВЕРОЯТНОСТЕЙ) ===
+        const STOP_WORDS = new Set([
+            'привет', 'как', 'называется', 'который', 'переводится', 'на', 'русский', 'язык',
+            'это', 'что', 'такое', 'у', 'меня', 'тебя', 'он', 'она', 'оно', 'они', 'мы', 'вы',
+            'где', 'когда', 'почему', 'зачем', 'был', 'была', 'было', 'были', 'есть', 'быть'
+        ]);
+
         class NeuralBrain {
             constructor() {
-                this.network = {}; // база связей слов
+                this.network = {};
             }
 
             tokenize(text) {
-                return text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, '').split(/\s+/).filter(w => w.length > 2);
+                return text.toLowerCase()
+                           .replace(/[^a-zа-яё0-9\s]/gi, ' ')
+                           .split(/\s+/)
+                           .filter(w => w.length > 1);
             }
 
-            // Обучение на тексте (создание вероятностей)
             train(text) {
                 const words = this.tokenize(text);
                 for (let i = 0; i < words.length - 1; i++) {
                     const w1 = words[i];
-                    const w2 = words[i+1];
+                    const w2 = words[i + 1];
                     if (!this.network[w1]) this.network[w1] = {};
                     this.network[w1][w2] = (this.network[w1][w2] || 0) + 1;
                 }
             }
 
-            // Генерация ответа + вывод процентов
-            generate(seedWords, length = 15) {
-                let currentWord = seedWords[Math.floor(Math.random() * seedWords.length)];
+            predictNext(word) {
+                const candidates = this.network[word];
+                if (!candidates) return null;
+
+                let total = 0;
+                for (let w in candidates) total += candidates[w];
+
+                let probs = [];
+                for (let w in candidates) {
+                    probs.push({
+                        word: w,
+                        percent: parseFloat(((candidates[w] / total) * 100).toFixed(1))
+                    });
+                }
+                probs.sort((a, b) => b.percent - a.percent);
+                return probs;
+            }
+
+            generateReply(seedWords, maxLength = 20) {
+                let startWord = seedWords.find(w => this.network[w]) || Object.keys(this.network)[0];
+
+                if (!startWord) {
+                    return { text: "Я изучил материалы, но пока не могу сформулировать ответ.", log: [] };
+                }
+
+                let currentWord = startWord;
                 let response = [currentWord];
                 let logSteps = [];
+                let used = new Set([currentWord]);
 
-                for (let i = 0; i < length; i++) {
-                    const nextOptions = this.network[currentWord];
-                    if (!nextOptions) break;
+                for (let i = 0; i < maxLength; i++) {
+                    const predictions = this.predictNext(currentWord);
+                    if (!predictions || predictions.length === 0) break;
 
-                    let total = 0;
-                    for (let w in nextOptions) total += nextOptions[w];
+                    logSteps.push({ context: currentWord, options: predictions });
 
-                    let probs = [];
-                    for (let w in nextOptions) {
-                        probs.push({
-                            word: w,
-                            percent: ((nextOptions[w] / total) * 100).toFixed(1)
-                        });
-                    }
-                    probs.sort((a, b) => b.percent - a.percent);
+                    let chosenObj = predictions.find(p => !used.has(p.word)) || predictions[0];
+                    let chosen = chosenObj.word;
 
-                    logSteps.push({ context: currentWord, options: probs });
-
-                    // ИИ выбирает самое вероятное слово
-                    const chosen = probs[0].word;
                     response.push(chosen);
+                    used.add(chosen);
                     currentWord = chosen;
                 }
 
@@ -111,10 +137,29 @@
 
         const brain = new NeuralBrain();
 
-        // Базовые слова поддержки на старте
-        brain.train("собака это печально сочувствую держись друг мы с тобой");
+        // Начальные литературные связи слов
+        brain.train("слово это источник знаний и мысли человека");
+        brain.train("книга хранит в себе мудрость веков и красоту языка");
 
-        // === ГЛАВНЫЙ ПРОЦЕСС АВТОНОМНОЙ РАБОТЫ ===
+        // Функция универсального поиска по источнику (Википедия, Викисловарь, Викитека)
+        async function fetchFromSource(domain, query, typeName, tagClass) {
+            try {
+                const res = await fetch(`https://${domain}/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
+                const data = await res.json();
+                const results = data.query.search || [];
+                return results.slice(0, 2).map(item => ({
+                    title: item.title,
+                    pageid: item.pageid,
+                    snippet: item.snippet,
+                    domain: domain,
+                    typeName: typeName,
+                    tagClass: tagClass
+                }));
+            } catch (e) {
+                return [];
+            }
+        }
+
         async function startProcess() {
             const inputField = document.getElementById('userInput');
             const userText = inputField.value.trim();
@@ -125,92 +170,94 @@
             const brainLog = document.getElementById('brain-log');
             const sendBtn = document.getElementById('sendBtn');
 
-            // 1. Показываем сообщение человека
             chat.innerHTML += `<div class="msg user">${userText}</div>`;
             inputField.value = '';
             sendBtn.disabled = true;
-            chat.scrollTop = chat.scrollHeight;
 
-            // Временное сообщение ИИ
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
-            aiMsg.innerText = '🔍 Выхожу в интернет и анализирую сайты...';
+            aiMsg.innerText = '📚 Сканирую словари, книги и статьи...';
             chat.appendChild(aiMsg);
             chat.scrollTop = chat.scrollHeight;
 
-            // 2. ИИ выделяет ключевые слова для поисковика
-            const keywords = userText.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, '').split(/\s+/).filter(w => w.length > 3);
-            const searchQuery = keywords.join(' ') || userText;
+            // Подготовка поисковых слов
+            const allWords = brain.tokenize(userText);
+            const keywords = allWords.filter(w => !STOP_WORDS.has(w) && w.length > 2);
+            const searchQuery = keywords.length > 0 ? keywords.join(' ') : userText;
 
-            searchLog.innerHTML = `<p>Поисковый запрос: <b>"${searchQuery}"</b></p><p>Ищу сайты...</p>`;
+            searchLog.innerHTML = `<p>Поисковые термины: <b>"${searchQuery}"</b></p><p>Отправляю запросы в библиотеки...</p>`;
 
             try {
-                // 3. ИИ ищет в открытом поисковом индексе интернета
-                const searchRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchQuery)}&format=json&origin=*`);
-                const searchData = await searchRes.json();
-                const results = searchData.query.search;
+                // ИИ ОБРАЩАЕТСЯ ОДНОВРЕМЕННО К 3 ИСТОЧНИКАМ:
+                const [wikiResults, dictResults, bookResults] = await Promise.all([
+                    fetchFromSource('ru.wikipedia.org', searchQuery, 'Энциклопедия', 'tag-wiki'),
+                    fetchFromSource('ru.wiktionary.org', searchQuery, 'Словарь', 'tag-dict'),
+                    fetchFromSource('ru.wikisource.org', searchQuery, 'Книга / Литература', 'tag-book')
+                ]);
 
-                if (!results || results.length === 0) {
-                    throw new Error("Ничего не найдено");
-                }
+                // Объединяем все найденные страницы
+                let allCandidates = [...wikiResults, ...dictResults, ...bookResults];
 
-                // 4. ИИ ОЦЕНИВАЕТ ЗАГОЛОВКИ И ВЫЧИСЛЯЕТ ПРОЦЕНТЫ РЕЛЕВАНТНОСТИ
-                let evaluatedSites = [];
-                results.slice(0, 5).forEach(site => {
+                if (allCandidates.length === 0) throw new Error("Ничего не найдено");
+
+                // ОЦЕНКА И ПОДБОР НАИБОЛЕЕ ПОДХОДЯЩЕГО ИСТОЧНИКА ИЗ ВСЕХ
+                allCandidates.forEach(item => {
                     let score = 0;
-                    keywords.forEach(kw => {
-                        if (site.title.toLowerCase().includes(kw)) score += 40;
-                        if (site.snippet.toLowerCase().includes(kw)) score += 20;
-                    });
-                    // Небольшой случайный фактор как в нейросетях
-                    let finalPercent = Math.min(Math.floor(score + Math.random() * 20), 98);
-                    if (finalPercent === 0) finalPercent = 5; // минимальный шанс "как утка"
+                    const titleLower = item.title.toLowerCase();
+                    const snippetLower = item.snippet.toLowerCase();
 
-                    evaluatedSites.push({
-                        title: site.title,
-                        pageid: site.pageid,
-                        percent: finalPercent,
-                        snippet: site.snippet
+                    keywords.forEach(kw => {
+                        if (titleLower.includes(kw)) score += 50;
+                        if (snippetLower.includes(kw)) score += 20;
                     });
+
+                    // Словари и книги получают дополнительный приоритет для богатства речи
+                    if (item.typeName === 'Словарь') score += 15;
+                    if (item.typeName === 'Книга / Литература') score += 10;
+
+                    item.percent = Math.min(Math.max(score, 12), 98);
                 });
 
-                // Сортируем заголовки по процентам
-                evaluatedSites.sort((a, b) => b.percent - a.percent);
+                // Сортируем от самых лучших к худшим
+                allCandidates.sort((a, b) => b.percent - a.percent);
 
-                // Выводим в лог мысли о сайтах
-                let siteHtml = `<p><b>Оценка заголовков поисковой выдачи:</b></p>`;
-                evaluatedSites.forEach((site, index) => {
+                // Отрисовка списка сайтов/книг в правой панели
+                let siteHtml = `<p><b>Сравнение найденных материалов:</b></p>`;
+                allCandidates.slice(0, 5).forEach((item, index) => {
                     const isWinner = index === 0;
                     siteHtml += `
                         <div class="site-eval ${isWinner ? 'winner' : ''}">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span>${isWinner ? '⭐ <b>ВЫБРАН:</b> ' : ''}${site.title}</span>
-                                <b>${site.percent}%</b>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span>
+                                    <span class="type-tag ${item.tagClass}">${item.typeName}</span>
+                                    ${isWinner ? '⭐ <b>ВЫБРАНО:</b> ' : ''}${item.title}
+                                </span>
+                                <b>${item.percent}%</b>
                             </div>
                         </div>
                     `;
                 });
                 searchLog.innerHTML = siteHtml;
 
-                // 5. ИИ ЧИТАЕТ ВЫБРАННЫЙ САЙТ (победителя)
-                const winner = evaluatedSites[0];
-                aiMsg.innerText = `📖 Читаю страницу "${winner.title}"...`;
+                // ЧИТАЕМ САМЫЙ ПОДХОДЯЩИЙ МАТЕРИАЛ (Словарь или Книгу)
+                const winner = allCandidates[0];
+                aiMsg.innerText = `📖 Читаю ${winner.typeName.toLowerCase()} "${winner.title}"...`;
 
-                const pageRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&pageids=${winner.pageid}&format=json&origin=*`);
+                const pageRes = await fetch(`https://${winner.domain}/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${winner.pageid}&format=json&origin=*`);
                 const pageData = await pageRes.json();
-                const fullText = pageData.query.pages[winner.pageid].extract;
+                const fullText = pageData.query.pages[winner.pageid].extract || "";
 
-                // 6. ИИ ОБУЧАЕТСЯ НА ПРОЧИТАННОМ
+                // МГНОВЕННОЕ ОБУЧЕНИЕ ИИ НА СЛОВАРЕ / КНИГЕ
                 brain.train(fullText);
-                brain.train(userText); // запоминает и слова пользователя
+                brain.train(userText);
 
-                // 7. ИИ ФОРМИРУЕТ ОТВЕТ И ВЫСЧИТЫВАЕТ ВЕРОЯТНОСТИ СЛОВ
-                const reply = brain.generate(keywords.length ? keywords : ['печально'], 14);
+                // ГЕНЕРАЦИЯ ОТВЕТА
+                const reply = brain.generateReply(keywords.length ? keywords : allWords, 18);
 
-                // Выводим мысли по подбору слов
-                let brainHtml = `<p><b>Генерация ответа по словам:</b></p>`;
-                reply.log.slice(0, 4).forEach(step => {
-                    brainHtml += `<p>После "<b>${step.context}</b>" выбирал:</p>`;
+                // Вывод вычисления связей слов
+                let brainHtml = `<p><b>Подбор слов на основе прочитанного:</b></p>`;
+                reply.log.slice(0, 5).forEach(step => {
+                    brainHtml += `<p>После "<b>${step.context}</b>" рассчитывал шансы слов:</p>`;
                     step.options.slice(0, 3).forEach(opt => {
                         brainHtml += `
                             <div class="prob-bar">
@@ -225,14 +272,13 @@
                 });
                 brainLog.innerHTML = brainHtml;
 
-                // Показываем готовый ответ
-                aiMsg.innerText = reply.text.charAt(0).toUpperCase() + reply.text.slice(1) + ".";
+                // Показываем ответ в чате
+                let cleanAnswer = reply.text.charAt(0).toUpperCase() + reply.text.slice(1);
+                aiMsg.innerText = cleanAnswer + ".";
 
             } catch (err) {
-                // Если интернет недоступен, генерируем из того, что уже знает
-                const fallback = brain.generate(keywords, 6);
-                aiMsg.innerText = fallback.text || "Мне очень жаль, я разделяю твою печаль.";
-                searchLog.innerHTML = "<i>Не удалось подключиться к поиску, ответил из локальной памяти.</i>";
+                aiMsg.innerText = "Не удалось найти подходящий материал в словарях или книгах. Попробуй другое слово!";
+                searchLog.innerHTML = `<i>Информация не найдена.</i>`;
             }
 
             sendBtn.disabled = false;
