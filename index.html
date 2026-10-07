@@ -3,285 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Умный ИИ: Книги, Словари и Поиск</title>
+    <title>Мой Автономный ИИ (V2.0 Умный)</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; display: flex; height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0f1a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        #left-panel { flex: 1.2; display: flex; flex-direction: column; border-right: 2px solid #1e293b; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 10px; line-height: 1.5; font-size: 15px; }
-        .user { align-self: flex-end; background: #2563eb; color: white; }
+        #left-panel { flex: 1.3; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0f172a; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 15px; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .user { align-self: flex-end; background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
         .ai { align-self: flex-start; background: #1e293b; border: 1px solid #334155; }
-        #input-bar { padding: 15px; background: #0b1120; display: flex; gap: 10px; border-top: 1px solid #1e293b; }
-        input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; font-size: 15px; }
-        input:focus { border-color: #3b82f6; }
-        button { padding: 12px 24px; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #059669; }
-        button:disabled { background: #475569; cursor: not-allowed; }
+        
+        #input-bar { padding: 20px; background: #0b1120; display: flex; gap: 10px; border-top: 1px solid #1e293b; }
+        input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; }
+        button { padding: 0 25px; border-radius: 10px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #059669; transform: scale(1.02); }
 
-        #right-panel { flex: 1; padding: 20px; background: #020617; overflow-y: auto; font-size: 13px; }
-        .section-title { color: #38bdf8; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
-        .site-eval { margin: 6px 0; padding: 8px; border-radius: 6px; background: #1e293b; font-size: 12px; }
+        #right-panel { flex: 1; padding: 20px; background: #020617; overflow-y: auto; }
+        .section-title { color: #38bdf8; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; opacity: 0.8; }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .site-eval { margin: 6px 0; padding: 10px; border-radius: 8px; background: #1e293b; font-size: 12px; transition: 0.3s; }
         .site-eval.winner { border-left: 4px solid #10b981; background: #132e27; }
-        .type-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 6px; text-transform: uppercase; }
-        .tag-book { background: #8b5cf6; color: white; }
-        .tag-dict { background: #f59e0b; color: white; }
-        .tag-wiki { background: #3b82f6; color: white; }
-        .prob-bar { background: #1e293b; margin: 4px 0; padding: 6px 10px; border-radius: 4px; }
-        .prob-fill { background: #38bdf8; height: 4px; border-radius: 2px; margin-top: 4px; }
+        .type-tag { font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-right: 8px; text-transform: uppercase; vertical-align: middle; }
+        .tag-book { background: #8b5cf6; } .tag-dict { background: #f59e0b; } .tag-wiki { background: #3b82f6; }
+        .prob-bar { background: #1e293b; margin: 8px 0; padding: 8px 12px; border-radius: 6px; }
+        .prob-fill { background: #38bdf8; height: 3px; border-radius: 2px; margin-top: 6px; }
     </style>
 </head>
 <body>
 
-    <!-- СЛЕВА: ЧАТ ДИАЛОГА -->
     <div id="left-panel">
-        <div id="chat">
-            <div class="msg ai">Привет! Теперь я ищу ответы не только в фактах, но и в <b>Словарях</b> (значения слов) и <b>Книгах / Литературе</b>! Задай мне любой вопрос или напиши слово.</div>
+        <div id="chat" id="chatWindow">
+            <div class="msg ai">Система инициализирована. Я готов обучаться. Спроси меня о чем-нибудь или просто пообщайся со мной.</div>
         </div>
         <div id="input-bar">
-            <input type="text" id="userInput" placeholder="Спроси что-нибудь или введи слово..." onkeydown="if(event.key==='Enter') startProcess()">
-            <button id="sendBtn" onclick="startProcess()">Спросить</button>
+            <input type="text" id="userInput" placeholder="Напиши сообщение..." autofocus onkeydown="if(event.key==='Enter') startProcess()">
+            <button id="sendBtn" onclick="startProcess()">ОТПРАВИТЬ</button>
         </div>
     </div>
 
-    <!-- СПРАВА: МЫСЛИ И ПОИСК В БИБЛИОТЕКАХ -->
     <div id="right-panel">
-        <div class="section-title">📚 1. Поиск по Книгам, Словарям и Википедии:</div>
-        <div id="search-log" class="card">Жду запрос...</div>
+        <div class="section-title">🔎 Поиск в реальном времени (Web Search):</div>
+        <div id="search-log" class="card">Ожидание запроса...</div>
 
-        <div class="section-title">🧠 2. Подбор слов (Вероятности):</div>
-        <div id="brain-log" class="card">Здесь будут отображаться вычисления процентов слов...</div>
+        <div class="section-title">📊 Анализ вероятностей слов:</div>
+        <div id="brain-log" class="card">Матрица пуста.</div>
     </div>
 
     <script>
-        const STOP_WORDS = new Set([
-            'привет', 'как', 'называется', 'который', 'переводится', 'на', 'русский', 'язык',
-            'это', 'что', 'такое', 'у', 'меня', 'тебя', 'он', 'она', 'оно', 'они', 'мы', 'вы',
-            'где', 'когда', 'почему', 'зачем', 'был', 'была', 'было', 'были', 'есть', 'быть'
-        ]);
-
+        // 1. УМНЫЙ МОЗГ (МАРКОВСКАЯ ЦЕПЬ)
         class NeuralBrain {
             constructor() {
-                this.network = {};
+                // ПРИНУДИТЕЛЬНО очищаем старую "депрессивную" память при первом запуске новой версии
+                if (localStorage.getItem('ai_version') !== '2.0') {
+                    localStorage.clear();
+                    localStorage.setItem('ai_version', '2.0');
+                }
+                this.network = JSON.parse(localStorage.getItem('ai_memory')) || {};
             }
 
             tokenize(text) {
-                return text.toLowerCase()
-                           .replace(/[^a-zа-яё0-9\s]/gi, ' ')
-                           .split(/\s+/)
-                           .filter(w => w.length > 1);
+                return text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 1);
             }
 
             train(text) {
                 const words = this.tokenize(text);
                 for (let i = 0; i < words.length - 1; i++) {
-                    const w1 = words[i];
-                    const w2 = words[i + 1];
+                    const w1 = words[i], w2 = words[i + 1];
                     if (!this.network[w1]) this.network[w1] = {};
                     this.network[w1][w2] = (this.network[w1][w2] || 0) + 1;
                 }
+                localStorage.setItem('ai_memory', JSON.stringify(this.network));
             }
 
-            predictNext(word) {
-                const candidates = this.network[word];
-                if (!candidates) return null;
+            generate(seedWords, maxLength = 20) {
+                let current = seedWords.find(w => this.network[w]) || Object.keys(this.network)[Math.floor(Math.random() * Object.keys(this.network).length)];
+                if (!current) return { text: "Я пока учусь и не знаю, что ответить на это.", log: [] };
 
-                let total = 0;
-                for (let w in candidates) total += candidates[w];
-
-                let probs = [];
-                for (let w in candidates) {
-                    probs.push({
-                        word: w,
-                        percent: parseFloat(((candidates[w] / total) * 100).toFixed(1))
-                    });
-                }
-                probs.sort((a, b) => b.percent - a.percent);
-                return probs;
-            }
-
-            generateReply(seedWords, maxLength = 20) {
-                let startWord = seedWords.find(w => this.network[w]) || Object.keys(this.network)[0];
-
-                if (!startWord) {
-                    return { text: "Я изучил материалы, но пока не могу сформулировать ответ.", log: [] };
-                }
-
-                let currentWord = startWord;
-                let response = [currentWord];
-                let logSteps = [];
-                let used = new Set([currentWord]);
-
+                let res = [current], logSteps = [], used = new Set([current]);
                 for (let i = 0; i < maxLength; i++) {
-                    const predictions = this.predictNext(currentWord);
-                    if (!predictions || predictions.length === 0) break;
-
-                    logSteps.push({ context: currentWord, options: predictions });
-
-                    let chosenObj = predictions.find(p => !used.has(p.word)) || predictions[0];
-                    let chosen = chosenObj.word;
-
-                    response.push(chosen);
-                    used.add(chosen);
-                    currentWord = chosen;
+                    let nexts = this.network[current];
+                    if (!nexts) break;
+                    let total = Object.values(nexts).reduce((a,b) => a+b, 0);
+                    let probs = Object.entries(nexts).map(([word, count]) => ({word, percent: (count/total*100).toFixed(1)}))
+                                .sort((a,b) => b.percent - a.percent);
+                    logSteps.push({context: current, options: probs});
+                    let nextWord = probs[0].word;
+                    if (used.has(nextWord) && probs[1]) nextWord = probs[1].word; // Избегаем зацикливания
+                    res.push(nextWord);
+                    used.add(nextWord);
+                    current = nextWord;
                 }
-
-                return {
-                    text: response.join(' '),
-                    log: logSteps
-                };
+                return { text: res.join(' '), log: logSteps };
             }
         }
 
         const brain = new NeuralBrain();
+        
+        // Базовые знания о себе
+        brain.train("я твой личный искусственный интеллект созданный на гитхабе");
+        brain.train("меня зовут ии я умею искать информацию в интернете и обучаться на лету");
 
-        // Начальные литературные связи слов
-        brain.train("слово это источник знаний и мысли человека");
-        brain.train("книга хранит в себе мудрость веков и красоту языка");
-
-        // Функция универсального поиска по источнику (Википедия, Викисловарь, Викитека)
-        async function fetchFromSource(domain, query, typeName, tagClass) {
-            try {
-                const res = await fetch(`https://${domain}/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
-                const data = await res.json();
-                const results = data.query.search || [];
-                return results.slice(0, 2).map(item => ({
-                    title: item.title,
-                    pageid: item.pageid,
-                    snippet: item.snippet,
-                    domain: domain,
-                    typeName: typeName,
-                    tagClass: tagClass
-                }));
-            } catch (e) {
-                return [];
-            }
-        }
+        const STOP_WORDS = new Set(['как','что','это','почему','зачем','привет','ты','кто','на','в','с','ли','бы']);
 
         async function startProcess() {
-            const inputField = document.getElementById('userInput');
-            const userText = inputField.value.trim();
-            if (!userText) return;
+            const inp = document.getElementById('userInput'), chat = document.getElementById('chat'), 
+                  sLog = document.getElementById('search-log'), bLog = document.getElementById('brain-log');
+            const text = inp.value.trim();
+            if (!text) return;
 
-            const chat = document.getElementById('chat');
-            const searchLog = document.getElementById('search-log');
-            const brainLog = document.getElementById('brain-log');
-            const sendBtn = document.getElementById('sendBtn');
-
-            chat.innerHTML += `<div class="msg user">${userText}</div>`;
-            inputField.value = '';
-            sendBtn.disabled = true;
+            chat.innerHTML += `<div class="msg user">${text}</div>`;
+            inp.value = '';
+            chat.scrollTop = chat.scrollHeight;
 
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
-            aiMsg.innerText = '📚 Сканирую словари, книги и статьи...';
+            aiMsg.innerText = '● ● ●';
             chat.appendChild(aiMsg);
-            chat.scrollTop = chat.scrollHeight;
 
-            // Подготовка поисковых слов
-            const allWords = brain.tokenize(userText);
-            const keywords = allWords.filter(w => !STOP_WORDS.has(w) && w.length > 2);
-            const searchQuery = keywords.length > 0 ? keywords.join(' ') : userText;
-
-            searchLog.innerHTML = `<p>Поисковые термины: <b>"${searchQuery}"</b></p><p>Отправляю запросы в библиотеки...</p>`;
-
-            try {
-                // ИИ ОБРАЩАЕТСЯ ОДНОВРЕМЕННО К 3 ИСТОЧНИКАМ:
-                const [wikiResults, dictResults, bookResults] = await Promise.all([
-                    fetchFromSource('ru.wikipedia.org', searchQuery, 'Энциклопедия', 'tag-wiki'),
-                    fetchFromSource('ru.wiktionary.org', searchQuery, 'Словарь', 'tag-dict'),
-                    fetchFromSource('ru.wikisource.org', searchQuery, 'Книга / Литература', 'tag-book')
-                ]);
-
-                // Объединяем все найденные страницы
-                let allCandidates = [...wikiResults, ...dictResults, ...bookResults];
-
-                if (allCandidates.length === 0) throw new Error("Ничего не найдено");
-
-                // ОЦЕНКА И ПОДБОР НАИБОЛЕЕ ПОДХОДЯЩЕГО ИСТОЧНИКА ИЗ ВСЕХ
-                allCandidates.forEach(item => {
-                    let score = 0;
-                    const titleLower = item.title.toLowerCase();
-                    const snippetLower = item.snippet.toLowerCase();
-
-                    keywords.forEach(kw => {
-                        if (titleLower.includes(kw)) score += 50;
-                        if (snippetLower.includes(kw)) score += 20;
-                    });
-
-                    // Словари и книги получают дополнительный приоритет для богатства речи
-                    if (item.typeName === 'Словарь') score += 15;
-                    if (item.typeName === 'Книга / Литература') score += 10;
-
-                    item.percent = Math.min(Math.max(score, 12), 98);
-                });
-
-                // Сортируем от самых лучших к худшим
-                allCandidates.sort((a, b) => b.percent - a.percent);
-
-                // Отрисовка списка сайтов/книг в правой панели
-                let siteHtml = `<p><b>Сравнение найденных материалов:</b></p>`;
-                allCandidates.slice(0, 5).forEach((item, index) => {
-                    const isWinner = index === 0;
-                    siteHtml += `
-                        <div class="site-eval ${isWinner ? 'winner' : ''}">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span>
-                                    <span class="type-tag ${item.tagClass}">${item.typeName}</span>
-                                    ${isWinner ? '⭐ <b>ВЫБРАНО:</b> ' : ''}${item.title}
-                                </span>
-                                <b>${item.percent}%</b>
-                            </div>
-                        </div>
-                    `;
-                });
-                searchLog.innerHTML = siteHtml;
-
-                // ЧИТАЕМ САМЫЙ ПОДХОДЯЩИЙ МАТЕРИАЛ (Словарь или Книгу)
-                const winner = allCandidates[0];
-                aiMsg.innerText = `📖 Читаю ${winner.typeName.toLowerCase()} "${winner.title}"...`;
-
-                const pageRes = await fetch(`https://${winner.domain}/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${winner.pageid}&format=json&origin=*`);
-                const pageData = await pageRes.json();
-                const fullText = pageData.query.pages[winner.pageid].extract || "";
-
-                // МГНОВЕННОЕ ОБУЧЕНИЕ ИИ НА СЛОВАРЕ / КНИГЕ
-                brain.train(fullText);
-                brain.train(userText);
-
-                // ГЕНЕРАЦИЯ ОТВЕТА
-                const reply = brain.generateReply(keywords.length ? keywords : allWords, 18);
-
-                // Вывод вычисления связей слов
-                let brainHtml = `<p><b>Подбор слов на основе прочитанного:</b></p>`;
-                reply.log.slice(0, 5).forEach(step => {
-                    brainHtml += `<p>После "<b>${step.context}</b>" рассчитывал шансы слов:</p>`;
-                    step.options.slice(0, 3).forEach(opt => {
-                        brainHtml += `
-                            <div class="prob-bar">
-                                <div style="display:flex; justify-content:space-between;">
-                                    <span>${opt.word}</span>
-                                    <b>${opt.percent}%</b>
-                                </div>
-                                <div class="prob-fill" style="width: ${opt.percent}%"></div>
-                            </div>
-                        `;
-                    });
-                });
-                brainLog.innerHTML = brainHtml;
-
-                // Показываем ответ в чате
-                let cleanAnswer = reply.text.charAt(0).toUpperCase() + reply.text.slice(1);
-                aiMsg.innerText = cleanAnswer + ".";
-
-            } catch (err) {
-                aiMsg.innerText = "Не удалось найти подходящий материал в словарях или книгах. Попробуй другое слово!";
-                searchLog.innerHTML = `<i>Информация не найдена.</i>`;
+            // ЛОГИКА САМОСОЗНАНИЯ (Чтобы не гуглить "Кто ты")
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes("кто ты") || lowerText.includes("как тебя зовут")) {
+                setTimeout(() => {
+                    aiMsg.innerText = "Я — твой автономный ИИ. Я живу на GitHub Pages и умею обучаться, читая сайты в интернете.";
+                    sLog.innerHTML = "Использована внутренняя память (Self-Awareness).";
+                }, 500);
+                return;
             }
 
-            sendBtn.disabled = false;
+            // ПОИСК
+            const tokens = brain.tokenize(text);
+            const query = tokens.filter(w => !STOP_WORDS.has(w)).join(' ') || text;
+            sLog.innerHTML = `Поиск: <b>${query}</b>...`;
+
+            try {
+                const searchRes = await Promise.all([
+                    fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${query}&format=json&origin=*`).then(r => r.json()),
+                    fetch(`https://ru.wiktionary.org/w/api.php?action=query&list=search&srsearch=${query}&format=json&origin=*`).then(r => r.json())
+                ]);
+
+                let results = [...(searchRes[0].query.search || []), ...(searchRes[1].query.search || [])];
+                if (!results.length) throw new Error();
+
+                results = results.slice(0, 4).map(r => ({
+                    title: r.title, id: r.pageid, 
+                    score: tokens.some(t => r.title.toLowerCase().includes(t)) ? 80 : 20,
+                    source: r.title.includes(':') ? 'ru.wiktionary.org' : 'ru.wikipedia.org'
+                })).sort((a,b) => b.score - a.score);
+
+                sLog.innerHTML = results.map((r,i) => `<div class="site-eval ${i==0?'winner':''}">[${r.score}%] ${r.title}</div>`).join('');
+                
+                const winner = results[0];
+                const page = await fetch(`https://${winner.source}/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${winner.id}&format=json&origin=*`).then(r => r.json());
+                const content = page.query.pages[winner.id].extract;
+
+                brain.train(content);
+                brain.train(text);
+
+                const reply = brain.generate(tokens);
+                aiMsg.innerText = reply.text;
+                
+                bLog.innerHTML = reply.log.slice(0,4).map(s => `
+                    <div class="prob-bar">
+                        <small>После "${s.context}"</small>
+                        <div style="display:flex; justify-content:space-between"><b>${s.options[0].word}</b> <span>${s.options[0].percent}%</span></div>
+                        <div class="prob-fill" style="width:${s.options[0].percent}%"></div>
+                    </div>
+                `).join('');
+
+            } catch(e) {
+                aiMsg.innerText = "Я не нашел этого в сети, но я запомнил твои слова и буду использовать их в будущем.";
+            }
             chat.scrollTop = chat.scrollHeight;
         }
     </script>
