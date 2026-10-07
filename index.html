@@ -2,65 +2,66 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой Автономный ИИ (V2.0 Умный)</title>
+    <title>Мой Самообучающийся ИИ v6.0</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0f1a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0f1a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; }
         #left-panel { flex: 1.3; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0f172a; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 85%; padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 15px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .user { align-self: flex-end; background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 10px; line-height: 1.5; font-size: 15px; }
+        .user { align-self: flex-end; background: #2563eb; color: white; }
         .ai { align-self: flex-start; background: #1e293b; border: 1px solid #334155; }
+        #input-bar { padding: 15px; background: #0b1120; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #1e293b; }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; }
+        button { padding: 10px 15px; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; }
+        .reset-btn { background: #ef4444; }
         
-        #input-bar { padding: 20px; background: #0b1120; display: flex; gap: 10px; border-top: 1px solid #1e293b; }
-        input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; }
-        button { padding: 0 25px; border-radius: 10px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #059669; transform: scale(1.02); }
-
-        #right-panel { flex: 1; padding: 20px; background: #020617; overflow-y: auto; }
-        .section-title { color: #38bdf8; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; opacity: 0.8; }
-        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .site-eval { margin: 6px 0; padding: 10px; border-radius: 8px; background: #1e293b; font-size: 12px; transition: 0.3s; }
-        .site-eval.winner { border-left: 4px solid #10b981; background: #132e27; }
-        .type-tag { font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: bold; margin-right: 8px; text-transform: uppercase; vertical-align: middle; }
-        .tag-book { background: #8b5cf6; } .tag-dict { background: #f59e0b; } .tag-wiki { background: #3b82f6; }
-        .prob-bar { background: #1e293b; margin: 8px 0; padding: 8px 12px; border-radius: 6px; }
-        .prob-fill { background: #38bdf8; height: 3px; border-radius: 2px; margin-top: 6px; }
+        #right-panel { flex: 1; padding: 20px; background: #020617; overflow-y: auto; font-size: 13px; }
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
+        .stat-val { color: #10b981; font-weight: bold; font-size: 18px; }
+        .slider-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+        input[type="range"] { width: 100%; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="left-panel">
-        <div id="chat" id="chatWindow">
-            <div class="msg ai">Система инициализирована. Я готов обучаться. Спроси меня о чем-нибудь или просто пообщайся со мной.</div>
+        <div id="chat">
+            <div class="msg ai">Я готов к работе. Моя база знаний загружена. Теперь я запоминаю всё навсегда!</div>
         </div>
         <div id="input-bar">
-            <input type="text" id="userInput" placeholder="Напиши сообщение..." autofocus onkeydown="if(event.key==='Enter') startProcess()">
-            <button id="sendBtn" onclick="startProcess()">ОТПРАВИТЬ</button>
+            <div class="slider-label">
+                <span>Логика (Робот)</span>
+                <span>Творчество (Писатель)</span>
+            </div>
+            <input type="range" id="tempSlider" min="0" max="100" value="20">
+            <div class="controls">
+                <input type="text" id="userInput" placeholder="Напиши что-нибудь..." onkeydown="if(event.key==='Enter') startProcess()">
+                <button onclick="startProcess()">Сказать</button>
+                <button class="reset-btn" onclick="clearMemory()">Забыть всё</button>
+            </div>
         </div>
     </div>
 
     <div id="right-panel">
-        <div class="section-title">🔎 Поиск в реальном времени (Web Search):</div>
-        <div id="search-log" class="card">Ожидание запроса...</div>
+        <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px;">📊 Статистика ИИ:</div>
+        <div class="card">
+            Связей в мозгу: <span id="brain-size" class="stat-val">0</span><br>
+            Прочитано статей: <span id="articles-count" class="stat-val">0</span>
+        </div>
 
-        <div class="section-title">📊 Анализ вероятностей слов:</div>
-        <div id="brain-log" class="card">Матрица пуста.</div>
+        <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px;">🧠 Анализ текущего ответа:</div>
+        <div id="brain-log" class="card">Жду диалога...</div>
     </div>
 
     <script>
-        // 1. УМНЫЙ МОЗГ (МАРКОВСКАЯ ЦЕПЬ)
-        class NeuralBrain {
+        class PersistentBrain {
             constructor() {
-                // ПРИНУДИТЕЛЬНО очищаем старую "депрессивную" память при первом запуске новой версии
-                if (localStorage.getItem('ai_version') !== '2.0') {
-                    localStorage.clear();
-                    localStorage.setItem('ai_version', '2.0');
-                }
-                this.network = JSON.parse(localStorage.getItem('ai_memory')) || {};
+                // Загружаем память из браузера
+                this.network = JSON.parse(localStorage.getItem('ai_global_memory')) || {};
+                this.articlesCount = parseInt(localStorage.getItem('ai_articles_count')) || 0;
+                this.updateStats();
             }
 
             tokenize(text) {
@@ -69,111 +70,111 @@
 
             train(text) {
                 const words = this.tokenize(text);
-                for (let i = 0; i < words.length - 1; i++) {
-                    const w1 = words[i], w2 = words[i + 1];
-                    if (!this.network[w1]) this.network[w1] = {};
-                    this.network[w1][w2] = (this.network[w1][w2] || 0) + 1;
+                for (let i = 0; i < words.length - 2; i++) {
+                    const key = words[i] + ' ' + words[i+1];
+                    const next = words[i+2];
+                    if (!this.network[key]) this.network[key] = {};
+                    this.network[key][next] = (this.network[key][next] || 0) + 1;
                 }
-                localStorage.setItem('ai_memory', JSON.stringify(this.network));
+                this.save();
             }
 
-            generate(seedWords, maxLength = 20) {
-                let current = seedWords.find(w => this.network[w]) || Object.keys(this.network)[Math.floor(Math.random() * Object.keys(this.network).length)];
-                if (!current) return { text: "Я пока учусь и не знаю, что ответить на это.", log: [] };
+            save() {
+                localStorage.setItem('ai_global_memory', JSON.stringify(this.network));
+                localStorage.setItem('ai_articles_count', this.articlesCount);
+                this.updateStats();
+            }
 
-                let res = [current], logSteps = [], used = new Set([current]);
-                for (let i = 0; i < maxLength; i++) {
-                    let nexts = this.network[current];
+            updateStats() {
+                document.getElementById('brain-size').innerText = Object.keys(this.network).length;
+                document.getElementById('articles-count').innerText = this.articlesCount;
+            }
+
+            generate(seed, temperature) {
+                const words = this.tokenize(seed);
+                const keys = Object.keys(this.network);
+                let starter = keys.find(k => k.includes(words[words.length-1])) || keys[Math.floor(Math.random() * keys.length)];
+
+                if (!starter) return "Я пока мало что знаю. Обучи меня!";
+
+                let [w1, w2] = starter.split(' ');
+                let result = [w1, w2];
+                let log = [];
+
+                for (let i = 0; i < 25; i++) {
+                    const key = w1 + ' ' + w2;
+                    const nexts = this.network[key];
                     if (!nexts) break;
-                    let total = Object.values(nexts).reduce((a,b) => a+b, 0);
-                    let probs = Object.entries(nexts).map(([word, count]) => ({word, percent: (count/total*100).toFixed(1)}))
-                                .sort((a,b) => b.percent - a.percent);
-                    logSteps.push({context: current, options: probs});
-                    let nextWord = probs[0].word;
-                    if (used.has(nextWord) && probs[1]) nextWord = probs[1].word; // Избегаем зацикливания
-                    res.push(nextWord);
-                    used.add(nextWord);
-                    current = nextWord;
+
+                    const sorted = Object.entries(nexts).sort((a,b) => b[1] - a[1]);
+                    
+                    // ЛОГИКА TEMPERATURE (Творчество)
+                    let chosen;
+                    if (Math.random() * 100 > temperature) {
+                        chosen = sorted[0][0]; // Самое вероятное
+                    } else {
+                        chosen = sorted[Math.floor(Math.random() * sorted.length)][0]; // Случайное из возможных
+                    }
+
+                    result.push(chosen);
+                    w1 = w2; w2 = chosen;
+                    if (result.length > 5 && (chosen === "." || i === 24)) break;
                 }
-                return { text: res.join(' '), log: logSteps };
+                return result.join(' ');
             }
         }
 
-        const brain = new NeuralBrain();
-        
-        // Базовые знания о себе
-        brain.train("я твой личный искусственный интеллект созданный на гитхабе");
-        brain.train("меня зовут ии я умею искать информацию в интернете и обучаться на лету");
+        const brain = new PersistentBrain();
 
-        const STOP_WORDS = new Set(['как','что','это','почему','зачем','привет','ты','кто','на','в','с','ли','бы']);
+        function clearMemory() {
+            if(confirm("ИИ полностью потеряет все знания. Уверен?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
 
         async function startProcess() {
-            const inp = document.getElementById('userInput'), chat = document.getElementById('chat'), 
-                  sLog = document.getElementById('search-log'), bLog = document.getElementById('brain-log');
+            const inp = document.getElementById('userInput');
+            const chat = document.getElementById('chat');
+            const temp = document.getElementById('tempSlider').value;
             const text = inp.value.trim();
             if (!text) return;
 
             chat.innerHTML += `<div class="msg user">${text}</div>`;
             inp.value = '';
-            chat.scrollTop = chat.scrollHeight;
 
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
             aiMsg.innerText = '● ● ●';
             chat.appendChild(aiMsg);
-
-            // ЛОГИКА САМОСОЗНАНИЯ (Чтобы не гуглить "Кто ты")
-            const lowerText = text.toLowerCase();
-            if (lowerText.includes("кто ты") || lowerText.includes("как тебя зовут")) {
-                setTimeout(() => {
-                    aiMsg.innerText = "Я — твой автономный ИИ. Я живу на GitHub Pages и умею обучаться, читая сайты в интернете.";
-                    sLog.innerHTML = "Использована внутренняя память (Self-Awareness).";
-                }, 500);
-                return;
-            }
-
-            // ПОИСК
-            const tokens = brain.tokenize(text);
-            const query = tokens.filter(w => !STOP_WORDS.has(w)).join(' ') || text;
-            sLog.innerHTML = `Поиск: <b>${query}</b>...`;
+            chat.scrollTop = chat.scrollHeight;
 
             try {
-                const searchRes = await Promise.all([
-                    fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${query}&format=json&origin=*`).then(r => r.json()),
-                    fetch(`https://ru.wiktionary.org/w/api.php?action=query&list=search&srsearch=${query}&format=json&origin=*`).then(r => r.json())
-                ]);
-
-                let results = [...(searchRes[0].query.search || []), ...(searchRes[1].query.search || [])];
-                if (!results.length) throw new Error();
-
-                results = results.slice(0, 4).map(r => ({
-                    title: r.title, id: r.pageid, 
-                    score: tokens.some(t => r.title.toLowerCase().includes(t)) ? 80 : 20,
-                    source: r.title.includes(':') ? 'ru.wiktionary.org' : 'ru.wikipedia.org'
-                })).sort((a,b) => b.score - a.score);
-
-                sLog.innerHTML = results.map((r,i) => `<div class="site-eval ${i==0?'winner':''}">[${r.score}%] ${r.title}</div>`).join('');
+                // Ищем инфу
+                const sRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(text)}&format=json&origin=*`);
+                const sData = await sRes.json();
                 
-                const winner = results[0];
-                const page = await fetch(`https://${winner.source}/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${winner.id}&format=json&origin=*`).then(r => r.json());
-                const content = page.query.pages[winner.id].extract;
+                if (sData.query.search.length > 0) {
+                    const winner = sData.query.search[0];
+                    const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exintro&titles=${encodeURIComponent(winner.title)}&format=json&origin=*`);
+                    const pData = await pRes.json();
+                    const pages = pData.query.pages;
+                    const content = pages[Object.keys(pages)[0]].extract;
 
-                brain.train(content);
+                    brain.train(content);
+                    brain.articlesCount++;
+                    brain.save();
+                }
+
+                // Учимся на фразе пользователя тоже!
                 brain.train(text);
 
-                const reply = brain.generate(tokens);
-                aiMsg.innerText = reply.text;
-                
-                bLog.innerHTML = reply.log.slice(0,4).map(s => `
-                    <div class="prob-bar">
-                        <small>После "${s.context}"</small>
-                        <div style="display:flex; justify-content:space-between"><b>${s.options[0].word}</b> <span>${s.options[0].percent}%</span></div>
-                        <div class="prob-fill" style="width:${s.options[0].percent}%"></div>
-                    </div>
-                `).join('');
+                // Отвечаем
+                const reply = brain.generate(text, temp);
+                aiMsg.innerText = reply.charAt(0).toUpperCase() + reply.slice(1) + ".";
 
-            } catch(e) {
-                aiMsg.innerText = "Я не нашел этого в сети, но я запомнил твои слова и буду использовать их в будущем.";
+            } catch (e) {
+                aiMsg.innerText = "Я не смог подключиться к интернету, но ответил из памяти: " + brain.generate(text, temp);
             }
             chat.scrollTop = chat.scrollHeight;
         }
