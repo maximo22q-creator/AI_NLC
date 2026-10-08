@@ -2,197 +2,183 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Автономный ИИ-Исследователь</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой Личный ИИ Ассистент</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #05070a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; display: flex; height: 100vh; }
         
-        /* ЛЕВАЯ ПАНЕЛЬ: ЧАТ */
-        #left-panel { flex: 1.5; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0a0f18; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; border: 1px solid #1e293b; }
-        .user { align-self: flex-end; background: #1d4ed8; border: none; }
-        .ai { align-self: flex-start; background: #1e293b; }
-        .agent-status { font-size: 11px; color: #10b981; margin-bottom: 5px; font-family: monospace; }
+        /* ЧАТ СЛЕВА */
+        #left-panel { flex: 1.3; display: flex; flex-direction: column; border-right: 1px solid #30363d; background: #0d1117; }
+        #chat { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 14px 18px; border-radius: 12px; line-height: 1.6; font-size: 16px; border: 1px solid #30363d; }
+        .user { align-self: flex-end; background: #238636; color: white; border: none; }
+        .ai { align-self: flex-start; background: #161b22; color: #e6edf3; }
         
-        #input-bar { padding: 20px; background: #000; border-top: 1px solid #1e293b; }
-        .input-row { display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; background: #0a0f18; border: 1px solid #334155; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
-        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: #10b981; color: #000; }
+        #input-bar { padding: 20px; background: #010409; border-top: 1px solid #30363d; display: flex; flex-direction: column; gap: 12px; }
+        .input-group { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; border-radius: 8px; outline: none; font-size: 15px; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; background: #238636; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #2ea043; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cache-btn { background: #8957e5; }
 
-        /* ПРАВАЯ ПАНЕЛЬ: НАСТРОЙКИ И АНАЛИТИКА */
-        #right-panel { flex: 1; padding: 20px; background: #000; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-        .setting-card { background: #0a0f18; border: 1px solid #1e293b; padding: 15px; border-radius: 10px; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-        label { font-size: 12px; color: #94a3b8; }
-        .log-box { flex: 1; background: #050505; border: 1px solid #334155; padding: 10px; font-family: monospace; font-size: 11px; color: #10b981; overflow-y: auto; }
-        .source-link { color: #3b82f6; text-decoration: none; display: block; margin-top: 4px; font-size: 10px; }
+        /* НАСТРОЙКИ СПРАВА */
+        #right-panel { flex: 0.9; padding: 25px; background: #010409; overflow-y: auto; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .slot-badge { background: #1f6feb; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+        .cache-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-bottom: 12px; position: relative; }
+        .cache-card.active { border-color: #238636; background: #0e2a16; }
+        .cache-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .mini-btn { padding: 5px 10px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; color: white; font-weight: bold; }
+        .del-btn { background: #da3633; }
+        .act-btn { background: #238636; }
     </style>
 </head>
 <body>
 
     <div id="left-panel">
         <div id="chat">
-            <div class="msg ai">
-                Я — автономный агент. Теперь я сам решаю, какие сайты посетить, чтобы ответить на твой вопрос. 
-                Настрой количество источников справа и спроси меня о чем угодно.
-            </div>
+            <div class="msg ai">Привет! Я твой новый ИИ-помощник. Я работаю на базе современных нейросетей, поэтому могу рассуждать, писать код и давать советы. <br><br>Справа ты можешь настроить до 10 моих "личностей" через Кэш.</div>
         </div>
         <div id="input-bar">
-            <div class="input-row">
-                <input type="text" id="userInput" placeholder="Введите ваш сложный вопрос..." onkeydown="if(event.key==='Enter') startAutonomousSearch()">
-                <button id="sendBtn" onclick="startAutonomousSearch()">ПОИСК И АНАЛИЗ</button>
+            <div class="input-group">
+                <input type="text" id="userInput" placeholder="Спроси меня о чем угодно..." onkeydown="if(event.key==='Enter') process()">
+                <button id="sendBtn" onclick="process()">ОТПРАВИТЬ</button>
             </div>
+            <button class="cache-btn" onclick="saveNewCache()">СОЗДАТЬ КЭШ-ID ИЗ ТЕКСТА НИЖЕ</button>
         </div>
     </div>
 
     <div id="right-panel">
-        <h3 style="margin:0; color:#10b981;">⚙️ НАСТРОЙКИ АГЕНТА</h3>
+        <div class="section-header">
+            <h3 style="margin:0; font-size: 14px;">🧠 ЛИЧНОСТИ ИИ</h3>
+            <span id="slot-counter" class="slot-badge">0 / 10</span>
+        </div>
         
-        <div class="setting-card">
-            <div class="setting-row">
-                <label>Глубина поиска (кол-во сайтов):</label>
-                <input type="number" id="depthLimit" value="3" min="1" max="10" style="width: 50px; background: #000; color: #10b981; border: 1px solid #334155; text-align: center;">
-            </div>
-            <p style="font-size: 10px; color: #475569; margin-top: 10px;">
-                Чем больше сайтов, тем точнее ответ, но дольше ожидание. Все запросы идут с вашего IP.
-            </p>
+        <div id="active-info" style="margin-bottom: 20px; font-size: 13px; color: #8b949e;">
+            Активный Кэш: <b id="active-id-text" style="color:#58a6ff">Стандартный</b>
         </div>
 
-        <h3 style="margin:0; color:#3b82f6;">📡 ЖУРНАЛ АВТОНОМНОЙ РАБОТЫ</h3>
-        <div id="agent-log" class="log-box">
-            Ожидание команды...
-        </div>
-
-        <div id="sources-list" class="setting-card" style="display:none;">
-            <label>ИСПОЛЬЗОВАННЫЕ ИСТОЧНИКИ:</label>
-            <div id="links-container"></div>
+        <div id="cache-list">
+            <!-- Здесь будут слоты кэша -->
         </div>
     </div>
 
     <script>
-        // === МОЗГ ИИ (N-ГРАММЫ С ПОСТОЯННОЙ ПАМЯТЬЮ) ===
-        class AgentBrain {
+        const MAX_SLOTS = 10;
+        
+        class CacheSystem {
             constructor() {
-                this.memory = JSON.parse(localStorage.getItem('agent_memory')) || {};
+                this.db = JSON.parse(localStorage.getItem('ai_pro_db')) || {};
+                this.activeId = localStorage.getItem('ai_pro_active') || null;
             }
 
-            train(text) {
-                const words = text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
-                for (let i = 0; i < words.length - 2; i++) {
-                    const key = words[i] + ' ' + words[i+1];
-                    const target = words[i+2];
-                    if (!this.memory[key]) this.memory[key] = {};
-                    this.memory[key][target] = (this.memory[key][target] || 0) + 1;
-                }
-                localStorage.setItem('agent_memory', JSON.stringify(this.memory));
-            }
-
-            generate(input) {
-                const words = input.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-                let current = words.slice(-2).join(' ');
-                const keys = Object.keys(this.memory);
+            save(text) {
+                const keys = Object.keys(this.db);
+                if (keys.length >= MAX_SLOTS) return { success: false };
                 
-                if (!this.memory[current]) {
-                    current = keys.find(k => k.includes(words[words.length-1])) || keys[Math.floor(Math.random()*keys.length)];
-                }
+                const id = 'ID-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+                this.db[id] = { id, text, date: new Date().toLocaleDateString() };
+                localStorage.setItem('ai_pro_db', JSON.stringify(this.db));
+                this.activeId = id;
+                localStorage.setItem('ai_pro_active', id);
+                return { success: true, id };
+            }
 
-                if (!current) return "Я изучил сайты, но не нашел конкретики. Попробуй другой вопрос.";
+            delete(id) {
+                delete this.db[id];
+                if (this.activeId === id) this.activeId = null;
+                localStorage.setItem('ai_pro_db', JSON.stringify(this.db));
+                localStorage.setItem('ai_pro_active', this.activeId);
+            }
 
-                let res = current.split(' ');
-                for (let i = 0; i < 40; i++) {
-                    const key = res.slice(-2).join(' ');
-                    if (!this.memory[key]) break;
-                    const next = Object.entries(this.memory[key]).sort((a,b) => b[1] - a[1])[0][0];
-                    if (res.slice(-10).includes(next)) break; // Защита от зацикливания
-                    res.push(next);
-                }
-                return res.join(' ');
+            activate(id) {
+                this.activeId = id;
+                localStorage.setItem('ai_pro_active', id);
             }
         }
 
-        const brain = new AgentBrain();
+        const system = new CacheSystem();
 
-        // === ЛОГИКА АВТОНОМНОГО АГЕНТА ===
-        async function startAutonomousSearch() {
-            const input = document.getElementById('userInput');
-            const chat = document.getElementById('chat');
-            const log = document.getElementById('agent-log');
+        function updateUI() {
+            const list = document.getElementById('cache-list');
+            const counter = document.getElementById('slot-counter');
+            const activeText = document.getElementById('active-id-text');
+            const keys = Object.keys(system.db);
+
+            counter.innerText = `${keys.length} / ${MAX_SLOTS}`;
+            activeText.innerText = system.activeId || "Стандартный";
+            list.innerHTML = '';
+
+            keys.forEach(id => {
+                const item = system.db[id];
+                const isActive = system.activeId === id;
+                list.innerHTML += `
+                    <div class="cache-card ${isActive ? 'active' : ''}">
+                        <b>${id}</b> <small style="float:right">${item.date}</small>
+                        <div style="font-size:12px; margin-top:8px; opacity:0.8; height: 40px; overflow:hidden;">${item.text}</div>
+                        <div class="cache-actions">
+                            ${!isActive ? `<button class="mini-btn act-btn" onclick="act('${id}')">Включить</button>` : ''}
+                            <button class="mini-btn del-btn" onclick="del('${id}')">Удалить</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function process() {
+            const inp = document.getElementById('userInput');
             const btn = document.getElementById('sendBtn');
-            const depth = parseInt(document.getElementById('depthLimit').value);
-            const query = input.value.trim();
+            const chat = document.getElementById('chat');
+            const text = inp.value.trim();
+            if (!text) return;
 
-            if (!query) return;
-
-            // 1. Подготовка UI
-            input.value = '';
+            chat.innerHTML += `<div class="msg user">${text}</div>`;
+            inp.value = '';
             btn.disabled = true;
-            chat.innerHTML += `<div class="msg user">${query}</div>`;
+
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
-            const statusIndicator = document.createElement('div');
-            statusIndicator.className = 'agent-status';
-            aiMsg.appendChild(statusIndicator);
-            const textContent = document.createElement('div');
-            aiMsg.appendChild(textContent);
+            aiMsg.innerText = '● ● ●';
             chat.appendChild(aiMsg);
             chat.scrollTop = chat.scrollHeight;
 
-            log.innerHTML = `[${new Date().toLocaleTimeString()}] Запуск поиска по запросу: ${query}...`;
+            // Формируем личность из Кэша
+            let systemPrompt = "Ты — полезный и умный ИИ помощник. Отвечай на русском языке.";
+            if (system.activeId && system.db[system.activeId]) {
+                systemPrompt += " Твоя роль и правила: " + system.db[system.activeId].text;
+            }
 
             try {
-                // 2. Шаг 1: Поиск списка сайтов (через Wikipedia API для стабильности CORS)
-                statusIndicator.innerText = "🌐 ПОИСК ИСТОЧНИКОВ В СЕТИ...";
-                const searchRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
-                const searchData = await searchRes.json();
-                const sites = searchData.query.search.slice(0, depth);
-
-                if (sites.length === 0) throw new Error("Сайты не найдены");
-
-                log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Найдено сайтов: ${sites.length}. Начинаю чтение...`;
-
-                // 3. Шаг 2: Цикл автономного чтения
-                const linksContainer = document.getElementById('links-container');
-                document.getElementById('sources-list').style.display = 'block';
-                linksContainer.innerHTML = '';
-
-                for (let i = 0; i < sites.length; i++) {
-                    const site = sites[i];
-                    statusIndicator.innerText = `📖 ЧТЕНИЕ И АНАЛИЗ (${i + 1}/${sites.length}): ${site.title}`;
-                    log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Загрузка: ${site.title}...`;
-
-                    // Получаем текст статьи
-                    const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&pageids=${site.pageid}&format=json&origin=*`);
-                    const pData = await pRes.json();
-                    const content = pData.query.pages[site.pageid].extract;
-
-                    // Обучаем мозг на лету
-                    brain.train(content);
-                    
-                    // Добавляем ссылку в отчет
-                    linksContainer.innerHTML += `<a class="source-link" href="https://ru.wikipedia.org/?curid=${site.pageid}" target="_blank">🔗 ${site.title}</a>`;
-                    
-                    log.innerHTML += ` OK.`;
-                }
-
-                // 4. Шаг 3: Генерация финального ответа
-                statusIndicator.innerText = "🧠 ГЕНЕРАЦИЯ ОТВЕТА НА ОСНОВЕ ПРОЧИТАННОГО...";
-                const answer = brain.generate(query);
+                // ИСПОЛЬЗУЕМ БЕСПЛАТНЫЙ И ОТКРЫТЫЙ НЕЙРОДВИЖОК
+                const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(text)}?system=${encodeURIComponent(systemPrompt)}&model=openai&seed=${Math.floor(Math.random()*1000)}`);
                 
-                textContent.innerText = answer.charAt(0).toUpperCase() + answer.slice(1) + ".";
-                statusIndicator.innerText = `✅ АНАЛИЗ ЗАВЕРШЕН (${sites.length} ИСТОЧНИКОВ)`;
-                log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Ответ сформирован успешно.`;
-
+                if (!res.ok) throw new Error();
+                
+                const reply = await res.text();
+                aiMsg.innerText = reply;
             } catch (e) {
-                textContent.innerText = "Я не смог найти достаточно данных в сети для ответа. Попробуй другой запрос.";
-                log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ОШИБКА: ${e.message}`;
-                statusIndicator.innerText = "❌ ОШИБКА";
+                aiMsg.innerText = "Ошибка: не удалось связаться с нейросетью. Попробуй еще раз.";
             }
 
             btn.disabled = false;
             chat.scrollTop = chat.scrollHeight;
         }
+
+        function saveNewCache() {
+            const val = document.getElementById('userInput').value;
+            if (!val) return alert("Сначала напиши инструкцию в поле ввода!");
+            const res = system.save(val);
+            if (!res.success) return alert("Лимит 10 слотов забит!");
+            document.getElementById('userInput').value = '';
+            updateUI();
+        }
+
+        function act(id) { system.activate(id); updateUI(); }
+        function del(id) { system.delete(id); updateUI(); }
+
+        updateUI();
     </script>
 </body>
 </html>
