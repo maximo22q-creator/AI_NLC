@@ -2,192 +2,151 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой Личный ИИ Ассистент v2.0</title>
+    <title>Мой Личный Локальный ИИ</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; display: flex; height: 100vh; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
         #left-panel { flex: 1.3; display: flex; flex-direction: column; border-right: 1px solid #30363d; background: #0d1117; }
         #chat { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 85%; padding: 14px 18px; border-radius: 12px; line-height: 1.6; font-size: 16px; border: 1px solid #30363d; }
-        .user { align-self: flex-end; background: #238636; color: white; border: none; }
-        .ai { align-self: flex-start; background: #161b22; color: #e6edf3; }
-        .error-msg { color: #f85149; border-color: #f85149; font-size: 14px; }
+        .msg { max-width: 85%; padding: 14px 18px; border-radius: 12px; line-height: 1.6; font-size: 15px; border: 1px solid #30363d; }
+        .user { align-self: flex-end; background: #238636; border: none; }
+        .ai { align-self: flex-start; background: #161b22; }
         
-        #input-bar { padding: 20px; background: #010409; border-top: 1px solid #30363d; display: flex; flex-direction: column; gap: 12px; }
-        .input-group { display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; border-radius: 8px; outline: none; font-size: 15px; }
-        button { padding: 12px 20px; border-radius: 8px; border: none; background: #238636; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { background: #2ea043; }
-        button:disabled { background: #484f58; color: #8b949e; cursor: not-allowed; }
-        .cache-btn { background: #8957e5; }
+        #input-bar { padding: 20px; background: #010409; border-top: 1px solid #30363d; }
+        .progress-container { margin-bottom: 10px; display: none; }
+        #progress-bar { width: 0%; height: 4px; background: #238636; transition: 0.3s; }
+        
+        .input-row { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; border-radius: 8px; outline: none; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; background: #238636; color: white; font-weight: bold; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: wait; }
 
         #right-panel { flex: 0.9; padding: 25px; background: #010409; overflow-y: auto; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .slot-badge { background: #1f6feb; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-        .cache-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-        .cache-card.active { border-color: #238636; background: #0e2a16; }
-        .cache-actions { display: flex; gap: 8px; margin-top: 10px; }
-        .mini-btn { padding: 5px 10px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; color: white; font-weight: bold; }
-        .del-btn { background: #da3633; }
-        .act-btn { background: #238636; }
+        .slot-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 13px; }
+        .slot-card.active { border: 2px solid #238636; }
+        .btn-mini { padding: 4px 8px; font-size: 11px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <div id="left-panel">
-        <div id="chat">
-            <div class="msg ai">Система перезапущена. Теперь я использую более надежный канал связи. <br><br>Если ошибка повторится, попробуй <b>отключить AdBlock</b> для этого сайта.</div>
+        <div id="status" style="padding: 10px 25px; font-size: 12px; color: #8b949e;">Ожидание загрузки мозга...</div>
+        <div class="progress-container" id="loader">
+            <div id="progress-bar"></div>
         </div>
+        
+        <div id="chat">
+            <div class="msg ai">Я — твой полностью локальный ИИ. Мои мысли не уходят в интернет. <br><br>Когда полоска сверху дойдет до конца, я смогу отвечать!</div>
+        </div>
+
         <div id="input-bar">
-            <div class="input-group">
-                <input type="text" id="userInput" placeholder="Напиши что-нибудь..." onkeydown="if(event.key==='Enter') process()">
-                <button id="sendBtn" onclick="process()">ОТПРАВИТЬ</button>
+            <div class="input-row">
+                <input type="text" id="userInput" placeholder="Напиши что-нибудь..." disabled>
+                <button id="sendBtn" onclick="send()" disabled>ОТПРАВИТЬ</button>
             </div>
-            <button class="cache-btn" onclick="saveNewCache()">СОЗДАТЬ КЭШ-ID ИЗ ТЕКСТА</button>
         </div>
     </div>
 
     <div id="right-panel">
-        <div class="section-header">
-            <h3 style="margin:0; font-size: 14px;">🧠 ЛИЧНОСТИ (МАКС 10)</h3>
-            <span id="slot-counter" class="slot-badge">0 / 10</span>
-        </div>
-        <div id="active-info" style="margin-bottom: 20px; font-size: 13px; color: #8b949e;">
-            Активный: <b id="active-id-text" style="color:#58a6ff">Стандарт</b>
-        </div>
+        <h3 style="color:#58a6ff; font-size:14px;">💾 КЭШ-СЛОТЫ (ПРАВИЛА)</h3>
         <div id="cache-list"></div>
+        <button onclick="saveCache()" style="background:#8957e5; width:100%; margin-top:10px;" class="btn-mini">СОЗДАТЬ КЭШ ИЗ ВВОДА</button>
     </div>
 
-    <script>
-        const MAX_SLOTS = 10;
-        
-        class CacheSystem {
-            constructor() {
-                this.db = JSON.parse(localStorage.getItem('ai_pro_db_v2')) || {};
-                this.activeId = localStorage.getItem('ai_pro_active_v2') || null;
-            }
-            save(text) {
-                const keys = Object.keys(this.db);
-                if (keys.length >= MAX_SLOTS) return { success: false };
-                const id = 'ID-' + Math.random().toString(36).substr(2, 4).toUpperCase();
-                this.db[id] = { id, text, date: new Date().toLocaleDateString() };
-                localStorage.setItem('ai_pro_db_v2', JSON.stringify(this.db));
-                this.activeId = id;
-                localStorage.setItem('ai_pro_active_v2', id);
-                return { success: true, id };
-            }
-            delete(id) {
-                delete this.db[id];
-                if (this.activeId === id) this.activeId = null;
-                localStorage.setItem('ai_pro_db_v2', JSON.stringify(this.db));
-                localStorage.setItem('ai_pro_active_v2', this.activeId);
-            }
-            activate(id) {
-                this.activeId = id;
-                localStorage.setItem('ai_pro_active_v2', id);
-            }
-        }
+    <!-- ПОДКЛЮЧАЕМ ЛОКАЛЬНЫЙ ДВИЖОК -->
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
 
-        const system = new CacheSystem();
+        let generator;
+        let db = JSON.parse(localStorage.getItem('local_ai_db')) || {};
+        let activeId = localStorage.getItem('local_ai_active') || null;
 
-        function updateUI() {
-            const list = document.getElementById('cache-list');
-            const counter = document.getElementById('slot-counter');
-            const activeText = document.getElementById('active-id-text');
-            const keys = Object.keys(system.db);
-            counter.innerText = `${keys.length} / ${MAX_SLOTS}`;
-            activeText.innerText = system.activeId || "Стандарт";
-            list.innerHTML = '';
-            keys.forEach(id => {
-                const item = system.db[id];
-                const isActive = system.activeId === id;
-                list.innerHTML += `
-                    <div class="cache-card ${isActive ? 'active' : ''}">
-                        <b>${id}</b>
-                        <div style="font-size:12px; margin-top:8px; opacity:0.8; max-height: 40px; overflow:hidden;">${item.text}</div>
-                        <div class="cache-actions">
-                            ${!isActive ? `<button class="mini-btn act-btn" onclick="act('${id}')">Включить</button>` : ''}
-                            <button class="mini-btn del-btn" onclick="del('${id}')">Удалить</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        async function fetchAI(messages, retryCount = 0) {
+        // 1. ЗАГРУЗКА ЛОКАЛЬНОЙ МОДЕЛИ (МОЗГА)
+        async function loadModel() {
+            const progress = document.getElementById('progress-bar');
+            const loader = document.getElementById('loader');
+            const status = document.getElementById('status');
+            
+            loader.style.display = 'block';
+            
             try {
-                const response = await fetch('https://text.pollinations.ai/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        messages: messages,
-                        model: 'openai',
-                        seed: Math.floor(Math.random() * 1000000)
-                    })
+                // Мы используем самую легкую, но умную модель Qwen 0.5B
+                generator = await pipeline('text-generation', 'Xenova/Qwen1.5-0.5B-Chat', {
+                    progress_callback: (p) => {
+                        if(p.status === 'progress') {
+                            progress.style.width = p.progress + '%';
+                            status.innerText = `Загрузка мозга: ${Math.round(p.progress)}%`;
+                        }
+                    }
                 });
-                if (!response.ok) throw new Error("Server Error");
-                return await response.text();
-            } catch (err) {
-                if (retryCount < 2) {
-                    console.log("Повторная попытка...");
-                    return await fetchAI(messages, retryCount + 1);
-                }
-                throw err;
+                
+                status.innerText = "✅ Мозг загружен локально. Интернет больше не нужен.";
+                loader.style.display = 'none';
+                document.getElementById('userInput').disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+            } catch (e) {
+                status.innerText = "❌ Ошибка загрузки. Возможно, мало памяти.";
             }
         }
 
-        async function process() {
+        window.send = async () => {
             const inp = document.getElementById('userInput');
-            const btn = document.getElementById('sendBtn');
             const chat = document.getElementById('chat');
             const text = inp.value.trim();
-            if (!text) return;
+            if(!text) return;
 
             chat.innerHTML += `<div class="msg user">${text}</div>`;
             inp.value = '';
-            btn.disabled = true;
-
+            
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
-            aiMsg.innerText = 'Думаю...';
+            aiMsg.innerText = 'Думаю локально...';
             chat.appendChild(aiMsg);
             chat.scrollTop = chat.scrollHeight;
 
-            let sysPrompt = "Ты — полезный ИИ ассистент. Отвечай на русском языке.";
-            if (system.activeId && system.db[system.activeId]) {
-                sysPrompt += " Твои правила: " + system.db[system.activeId].text;
-            }
+            // Формируем промпт с учетом твоих правил из Кэша
+            let systemRule = "Ты - полезный ИИ.";
+            if(activeId && db[activeId]) systemRule += " ПРАВИЛО: " + db[activeId].text;
+            
+            const prompt = `<|im_start|>system\n${systemRule}<|im_end|>\n<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant\n`;
 
-            try {
-                const messages = [
-                    { role: "system", content: sysPrompt },
-                    { role: "user", content: text }
-                ];
-                const reply = await fetchAI(messages);
-                aiMsg.innerText = reply;
-            } catch (e) {
-                aiMsg.classList.add('error-msg');
-                aiMsg.innerHTML = "<b>Ошибка связи.</b><br>1. Попробуй еще раз.<br>2. Отключи AdBlock/VPN.<br>3. Возможно, сервер перегружен.";
-            }
+            const output = await generator(prompt, {
+                max_new_tokens: 100,
+                temperature: 0.7,
+                do_sample: true,
+                top_k: 50,
+            });
 
-            btn.disabled = false;
+            const reply = output[0].generated_text.split('assistant\n')[1] || "Я задумался...";
+            aiMsg.innerText = reply;
             chat.scrollTop = chat.scrollHeight;
-        }
+        };
 
-        function saveNewCache() {
+        // Работа с кэшем
+        window.saveCache = () => {
             const val = document.getElementById('userInput').value;
-            if (!val) return alert("Напиши текст в поле!");
-            const res = system.save(val);
-            if (!res.success) return alert("Слоты полны!");
-            document.getElementById('userInput').value = '';
+            const id = 'ID-' + Math.random().toString(36).substr(2,4).toUpperCase();
+            db[id] = { id, text: val };
+            localStorage.setItem('local_ai_db', JSON.stringify(db));
             updateUI();
+        };
+
+        window.activate = (id) => { activeId = id; localStorage.setItem('local_ai_active', id); updateUI(); };
+
+        function updateUI() {
+            const list = document.getElementById('cache-list');
+            list.innerHTML = '';
+            Object.keys(db).forEach(id => {
+                const active = activeId === id;
+                list.innerHTML += `<div class="slot-card ${active?'active':''}">
+                    <b>${id}</b><br>${db[id].text.substring(0,30)}...
+                    <button class="btn-mini" onclick="activate('${id}')">Включить</button>
+                </div>`;
+            });
         }
 
-        function act(id) { system.activate(id); updateUI(); }
-        function del(id) { system.delete(id); updateUI(); }
-
+        loadModel();
         updateUI();
     </script>
 </body>
