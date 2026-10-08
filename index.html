@@ -2,157 +2,197 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой ИИ: Исправленный Калькулятор</title>
+    <title>Автономный ИИ-Исследователь</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #05070a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; }
-        #left-panel { flex: 1.2; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0a0f18; }
-        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 85%; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; line-height: 1.4; }
+        body { font-family: 'Segoe UI', sans-serif; background: #05070a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* ЛЕВАЯ ПАНЕЛЬ: ЧАТ */
+        #left-panel { flex: 1.5; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0a0f18; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; border: 1px solid #1e293b; }
         .user { align-self: flex-end; background: #1d4ed8; border: none; }
         .ai { align-self: flex-start; background: #1e293b; }
-        .math-badge { color: #10b981; font-size: 11px; font-weight: bold; display: block; margin-bottom: 4px; }
-        #input-bar { padding: 15px; background: #000; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #1e293b; }
-        input { background: #0a0f18; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 5px; outline: none; }
-        button { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; background: #10b981; color: #000; }
-        #right-panel { flex: 1; padding: 20px; background: #000; border-left: 1px solid #1e293b; font-size: 13px; }
-        .card { background: #111; border: 1px solid #334155; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+        .agent-status { font-size: 11px; color: #10b981; margin-bottom: 5px; font-family: monospace; }
+        
+        #input-bar { padding: 20px; background: #000; border-top: 1px solid #1e293b; }
+        .input-row { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; background: #0a0f18; border: 1px solid #334155; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: #10b981; color: #000; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ПРАВАЯ ПАНЕЛЬ: НАСТРОЙКИ И АНАЛИТИКА */
+        #right-panel { flex: 1; padding: 20px; background: #000; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .setting-card { background: #0a0f18; border: 1px solid #1e293b; padding: 15px; border-radius: 10px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        label { font-size: 12px; color: #94a3b8; }
+        .log-box { flex: 1; background: #050505; border: 1px solid #334155; padding: 10px; font-family: monospace; font-size: 11px; color: #10b981; overflow-y: auto; }
+        .source-link { color: #3b82f6; text-decoration: none; display: block; margin-top: 4px; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div id="left-panel">
         <div id="chat">
-            <div class="msg ai">Я обновил математический модуль! Теперь я понимаю 2+2 без пробелов и смесь цифр со словами. Попробуй!</div>
+            <div class="msg ai">
+                Я — автономный агент. Теперь я сам решаю, какие сайты посетить, чтобы ответить на твой вопрос. 
+                Настрой количество источников справа и спроси меня о чем угодно.
+            </div>
         </div>
         <div id="input-bar">
-            <input type="text" id="userInput" placeholder="2+2, 7 плюс 14..." onkeydown="if(event.key==='Enter') send()">
-            <button onclick="send()">СПРОСИТЬ</button>
+            <div class="input-row">
+                <input type="text" id="userInput" placeholder="Введите ваш сложный вопрос..." onkeydown="if(event.key==='Enter') startAutonomousSearch()">
+                <button id="sendBtn" onclick="startAutonomousSearch()">ПОИСК И АНАЛИЗ</button>
+            </div>
         </div>
     </div>
 
     <div id="right-panel">
-        <h3>🧠 СТАТУС СИСТЕМЫ</h3>
-        <div class="card">
-            Математика: <b style="color:#10b981">УЛЬТРА-РЕЖИМ</b><br>
-            Текстовая база: <b id="fact-count" style="color:#3b82f6">0</b> связей
+        <h3 style="margin:0; color:#10b981;">⚙️ НАСТРОЙКИ АГЕНТА</h3>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <label>Глубина поиска (кол-во сайтов):</label>
+                <input type="number" id="depthLimit" value="3" min="1" max="10" style="width: 50px; background: #000; color: #10b981; border: 1px solid #334155; text-align: center;">
+            </div>
+            <p style="font-size: 10px; color: #475569; margin-top: 10px;">
+                Чем больше сайтов, тем точнее ответ, но дольше ожидание. Все запросы идут с вашего IP.
+            </p>
         </div>
-        <div style="color:#94a3b8; font-size: 11px;">
-            ИИ сначала ищет числа и знаки. Если находит — блокирует текстовый мозг, чтобы не нести чепуху.
+
+        <h3 style="margin:0; color:#3b82f6;">📡 ЖУРНАЛ АВТОНОМНОЙ РАБОТЫ</h3>
+        <div id="agent-log" class="log-box">
+            Ожидание команды...
+        </div>
+
+        <div id="sources-list" class="setting-card" style="display:none;">
+            <label>ИСПОЛЬЗОВАННЫЕ ИСТОЧНИКИ:</label>
+            <div id="links-container"></div>
         </div>
     </div>
 
     <script>
-        class MathEngine {
+        // === МОЗГ ИИ (N-ГРАММЫ С ПОСТОЯННОЙ ПАМЯТЬЮ) ===
+        class AgentBrain {
             constructor() {
-                this.numWords = {
-                    'ноль':0,'один':1,'два':2,'три':3,'четыре':4,'пять':5,'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10,
-                    'одиннадцать':11,'двенадцать':12,'тринадцать':13,'четырнадцать':14,'пятнадцать':15,'двадцать':20,'тридцать':30,'сорок':40,'сто':100
-                };
-                this.ops = { 'плюс':'+','глюс':'+','минус':'-','умножить':'*','на':'*','разделить':'/','делить':'/' };
+                this.memory = JSON.parse(localStorage.getItem('agent_memory')) || {};
             }
 
-            // Ультра-детектор математики
-            isMath(text) {
-                const t = text.toLowerCase();
-                // Если есть цифра и рядом знак (2+2, 5-1)
-                if (/[0-9]\s*[\+\-\*\/x×÷:]\s*[0-9]/.test(t)) return true;
-                // Если есть слова-числа или цифры и слова-операции (7 плюс 14)
-                const tokens = t.split(/[\s\+\-\*\/x×÷:]+/);
-                let hasNum = /[0-9]/.test(t);
-                for(let word in this.numWords) if(t.includes(word)) hasNum = true;
-                let hasOp = false;
-                for(let op in this.ops) if(t.includes(op)) hasOp = true;
-                if(/[\+\-\*\/]/.test(t)) hasOp = true;
-                
-                return hasNum && hasOp;
-            }
-
-            solve(text) {
-                try {
-                    // 1. Заменяем слова-операции на знаки
-                    let prepared = text.toLowerCase();
-                    for(let op in this.ops) prepared = prepared.split(op).join(this.ops[op]);
-                    
-                    // 2. Заменяем слова-цифры на реальные цифры
-                    for(let word in this.numWords) prepared = prepared.split(word).join(this.numWords[word]);
-
-                    // 3. Чистим всё кроме цифр и знаков
-                    prepared = prepared.replace(/[^0-9\+\-\*\/\.]/g, ' ');
-                    
-                    // 4. Считаем результат (безопасно через Function)
-                    // Убираем лишние пробелы и считаем
-                    const expression = prepared.replace(/\s+/g, '');
-                    const result = new Function(`return ${expression}`)();
-                    
-                    if (typeof result !== 'number' || isNaN(result)) return null;
-                    return `🧮 ${text.trim()} = ${Math.round(result * 100) / 100}`;
-                } catch (e) { return null; }
-            }
-        }
-
-        class TextBrain {
-            constructor() {
-                this.memory = JSON.parse(localStorage.getItem('ai_v2_mem')) || {};
-            }
             train(text) {
-                let words = text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
+                const words = text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
                 for (let i = 0; i < words.length - 2; i++) {
                     const key = words[i] + ' ' + words[i+1];
                     const target = words[i+2];
                     if (!this.memory[key]) this.memory[key] = {};
                     this.memory[key][target] = (this.memory[key][target] || 0) + 1;
                 }
-                localStorage.setItem('ai_v2_mem', JSON.stringify(this.memory));
+                localStorage.setItem('agent_memory', JSON.stringify(this.memory));
             }
+
             generate(input) {
-                let words = input.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
+                const words = input.toLowerCase().split(/\s+/).filter(w => w.length > 2);
                 let current = words.slice(-2).join(' ');
                 const keys = Object.keys(this.memory);
-                if (!this.memory[current]) current = keys.find(k => k.includes(words[words.length-1])) || keys[Math.floor(Math.random()*keys.length)];
-                if (!current) return "Я пока не знаю, что ответить.";
+                
+                if (!this.memory[current]) {
+                    current = keys.find(k => k.includes(words[words.length-1])) || keys[Math.floor(Math.random()*keys.length)];
+                }
+
+                if (!current) return "Я изучил сайты, но не нашел конкретики. Попробуй другой вопрос.";
+
                 let res = current.split(' ');
-                for (let i = 0; i < 20; i++) {
+                for (let i = 0; i < 40; i++) {
                     const key = res.slice(-2).join(' ');
                     if (!this.memory[key]) break;
                     const next = Object.entries(this.memory[key]).sort((a,b) => b[1] - a[1])[0][0];
+                    if (res.slice(-10).includes(next)) break; // Защита от зацикливания
                     res.push(next);
                 }
                 return res.join(' ');
             }
         }
 
-        const math = new MathEngine();
-        const ai = new TextBrain();
+        const brain = new AgentBrain();
 
-        async function send() {
-            const inp = document.getElementById('userInput');
+        // === ЛОГИКА АВТОНОМНОГО АГЕНТА ===
+        async function startAutonomousSearch() {
+            const input = document.getElementById('userInput');
             const chat = document.getElementById('chat');
-            const text = inp.value.trim();
-            if (!text) return;
+            const log = document.getElementById('agent-log');
+            const btn = document.getElementById('sendBtn');
+            const depth = parseInt(document.getElementById('depthLimit').value);
+            const query = input.value.trim();
 
-            chat.innerHTML += `<div class="msg user">${text}</div>`;
-            inp.value = '';
+            if (!query) return;
 
-            // Сначала жесткая проверка на математику
-            if (math.isMath(text)) {
-                const res = math.solve(text);
-                if (res) {
-                    chat.innerHTML += `<div class="msg ai"><span class="math-badge">ИНСТРУМЕНТ: КАЛЬКУЛЯТОР</span>${res}</div>`;
-                } else {
-                    chat.innerHTML += `<div class="msg ai"><span class="math-badge">ОШИБКА МАТЕМАТИКИ</span>Я вижу, что это пример, но не могу его разобрать. Пиши проще, например: 7 + 14</div>`;
-                }
-            } else {
-                // Если не математика — обычный мозг
-                const reply = ai.generate(text);
-                chat.innerHTML += `<div class="msg ai"><span class="math-badge" style="color:#3b82f6">ИНСТРУМЕНТ: ТЕКСТОВЫЙ МОЗГ</span>${reply}</div>`;
-            }
-            
+            // 1. Подготовка UI
+            input.value = '';
+            btn.disabled = true;
+            chat.innerHTML += `<div class="msg user">${query}</div>`;
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'msg ai';
+            const statusIndicator = document.createElement('div');
+            statusIndicator.className = 'agent-status';
+            aiMsg.appendChild(statusIndicator);
+            const textContent = document.createElement('div');
+            aiMsg.appendChild(textContent);
+            chat.appendChild(aiMsg);
             chat.scrollTop = chat.scrollHeight;
-            document.getElementById('fact-count').innerText = Object.keys(ai.memory).length;
-        }
 
-        document.getElementById('fact-count').innerText = Object.keys(ai.memory).length;
+            log.innerHTML = `[${new Date().toLocaleTimeString()}] Запуск поиска по запросу: ${query}...`;
+
+            try {
+                // 2. Шаг 1: Поиск списка сайтов (через Wikipedia API для стабильности CORS)
+                statusIndicator.innerText = "🌐 ПОИСК ИСТОЧНИКОВ В СЕТИ...";
+                const searchRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
+                const searchData = await searchRes.json();
+                const sites = searchData.query.search.slice(0, depth);
+
+                if (sites.length === 0) throw new Error("Сайты не найдены");
+
+                log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Найдено сайтов: ${sites.length}. Начинаю чтение...`;
+
+                // 3. Шаг 2: Цикл автономного чтения
+                const linksContainer = document.getElementById('links-container');
+                document.getElementById('sources-list').style.display = 'block';
+                linksContainer.innerHTML = '';
+
+                for (let i = 0; i < sites.length; i++) {
+                    const site = sites[i];
+                    statusIndicator.innerText = `📖 ЧТЕНИЕ И АНАЛИЗ (${i + 1}/${sites.length}): ${site.title}`;
+                    log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Загрузка: ${site.title}...`;
+
+                    // Получаем текст статьи
+                    const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&pageids=${site.pageid}&format=json&origin=*`);
+                    const pData = await pRes.json();
+                    const content = pData.query.pages[site.pageid].extract;
+
+                    // Обучаем мозг на лету
+                    brain.train(content);
+                    
+                    // Добавляем ссылку в отчет
+                    linksContainer.innerHTML += `<a class="source-link" href="https://ru.wikipedia.org/?curid=${site.pageid}" target="_blank">🔗 ${site.title}</a>`;
+                    
+                    log.innerHTML += ` OK.`;
+                }
+
+                // 4. Шаг 3: Генерация финального ответа
+                statusIndicator.innerText = "🧠 ГЕНЕРАЦИЯ ОТВЕТА НА ОСНОВЕ ПРОЧИТАННОГО...";
+                const answer = brain.generate(query);
+                
+                textContent.innerText = answer.charAt(0).toUpperCase() + answer.slice(1) + ".";
+                statusIndicator.innerText = `✅ АНАЛИЗ ЗАВЕРШЕН (${sites.length} ИСТОЧНИКОВ)`;
+                log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] Ответ сформирован успешно.`;
+
+            } catch (e) {
+                textContent.innerText = "Я не смог найти достаточно данных в сети для ответа. Попробуй другой запрос.";
+                log.innerHTML += `<br>[${new Date().toLocaleTimeString()}] ОШИБКА: ${e.message}`;
+                statusIndicator.innerText = "❌ ОШИБКА";
+            }
+
+            btn.disabled = false;
+            chat.scrollTop = chat.scrollHeight;
+        }
     </script>
 </body>
 </html>
