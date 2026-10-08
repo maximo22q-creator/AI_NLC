@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой ИИ: Исследователь v2.0</title>
+    <title>Мой ИИ: Мозг + Калькулятор</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #05070a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; }
@@ -11,6 +11,7 @@
         .msg { max-width: 85%; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; line-height: 1.4; }
         .user { align-self: flex-end; background: #1d4ed8; border: none; }
         .ai { align-self: flex-start; background: #1e293b; }
+        .math-badge { color: #f59e0b; font-size: 11px; display: block; margin-bottom: 4px; }
         #input-bar { padding: 15px; background: #000; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #1e293b; }
         input { background: #0a0f18; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 5px; outline: none; }
         .btn-group { display: flex; gap: 5px; }
@@ -24,13 +25,13 @@
 
     <div id="left-panel">
         <div id="chat">
-            <div class="msg ai">Внимание: я очистил мусорные данные. Попробуй дать мне ссылку на статью (лучше Википедию) или просто спроси что-то!</div>
+            <div class="msg ai">Обновление: теперь я умею считать! Спроси меня "сколько будет 2+2" или "двадцать пять плюс семь". А ещё я понял игру ULTRAKILL, спасибо за обучение!</div>
         </div>
         <div id="input-bar">
-            <input type="text" id="urlInput" placeholder="Ссылка для обучения (напр. https://ru.wikipedia.org/wiki/V1)">
+            <input type="text" id="urlInput" placeholder="Ссылка для обучения (Википедия и т.д.)">
             <button style="background:#3b82f6; color:white;" onclick="learnFromURL()">ИЗУЧИТЬ СТАТЬЮ</button>
             <hr style="border:0.5px solid #334155; width:100%;">
-            <input type="text" id="userInput" placeholder="Кто такой V1?..." onkeydown="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Вопрос или пример (2+2, сто минус сорок)..." onkeydown="if(event.key==='Enter') send()">
             <div class="btn-group">
                 <button onclick="send()">СПРОСИТЬ</button>
                 <button class="red-btn" onclick="clearBrain()">ОЧИСТИТЬ МОЗГ</button>
@@ -44,31 +45,137 @@
             Связей: <b id="fact-count" style="color:#10b981">0</b> | 
             Уровень: <b id="brain-power" style="color:#3b82f6">0</b>
         </div>
+        <h4>🧮 МАТЕМАТИЧЕСКИЙ МОДУЛЬ: <span style="color:#10b981">ВКЛЮЧЕН</span></h4>
+        <p style="font-size:11px; color:#94a3b8;">Понимает цифры (2+2), слова (два плюс два), исправляет опечатки (глюс → плюс) и приоритет операций (сначала умножение).</p>
         <div id="knowledge-list" style="font-size:11px; color:#94a3b8;"></div>
     </div>
 
     <script>
+        // ============================================
+        // МОДУЛЬ 1: МАТЕМАТИКА (НАШ СОБСТВЕННЫЙ КАЛЬКУЛЯТОР)
+        // ============================================
+        class MathEngine {
+            constructor() {
+                this.numWords = {
+                    'ноль':0,'один':1,'одна':1,'два':2,'две':2,'три':3,'четыре':4,'пять':5,
+                    'шесть':6,'семь':7,'восемь':8,'девять':9,'десять':10,'одиннадцать':11,
+                    'двенадцать':12,'тринадцать':13,'четырнадцать':14,'пятнадцать':15,
+                    'шестнадцать':16,'семнадцать':17,'восемнадцать':18,'девятнадцать':19,
+                    'двадцать':20,'тридцать':30,'сорок':40,'пятьдесят':50,'шестьдесят':60,
+                    'семьдесят':70,'восемьдесят':80,'девяносто':90,'сто':100,'двести':200,
+                    'триста':300,'четыреста':400,'пятьсот':500,'тысяча':1000
+                };
+                this.opWords = {
+                    'плюс':'+','прибавить':'+','сложить':'+','минус':'-',
+                    'умножить':'*','умножение':'*','умножь':'*','на':'*',
+                    'разделить':'/','делить':'/','деление':'/'
+                };
+                this.symbols = { 'x':'*','×':'*','*':'*','÷':'/',':':'/','/':'/','+':'+','-':'-' };
+            }
+
+            // Поиск слова с исправлением 1 опечатки (глюс -> плюс)
+            lookup(word) {
+                const all = { ...this.numWords, ...this.opWords, ...this.symbols };
+                if (all[word] !== undefined) return all[word];
+                if (word.length < 4) return null;
+                for (let key in all) {
+                    if (key.length < 4) continue;
+                    if (Math.abs(key.length - word.length) > 1) continue;
+                    let diff = 0;
+                    for (let i = 0; i < Math.max(key.length, word.length); i++) {
+                        if (key[i] !== word[i]) diff++;
+                    }
+                    if (diff <= 1) return all[key];
+                }
+                return null;
+            }
+
+            // Это вообще математический вопрос?
+            isMath(text) {
+                const t = text.toLowerCase();
+                if (/[0-9]\s*[\+\-\*\/x×÷:]\s*[0-9]/.test(t)) return true;
+                if (/(сколько будет|посчитай|вычисли|реши)/.test(t)) return true;
+                let nums = 0, ops = 0;
+                t.split(/\s+/).forEach(w => {
+                    const v = this.lookup(w.replace(/[^а-яёa-z0-9\+\-\*\/]/gi, ''));
+                    if (typeof v === 'number') nums++;
+                    else if (typeof v === 'string') ops++;
+                });
+                return nums >= 2 && ops >= 1;
+            }
+
+            // Превращаем слова в цифры (двадцать пять -> 25)
+            normalize(text) {
+                const tokens = text.toLowerCase()
+                    .replace(/[^а-яёa-z0-9\+\-\*\/x×÷:=\s]/gi, ' ')
+                    .split(/\s+/).filter(w => w.length > 0);
+                let out = [];
+                for (let i = 0; i < tokens.length; i++) {
+                    const w = tokens[i];
+                    const v = this.lookup(w);
+                    if (typeof v === 'number') {
+                        const next = tokens[i+1] ? this.lookup(tokens[i+1]) : null;
+                        if (typeof next === 'number' && v % 10 === 0 && next < 10) { out.push(v + next); i++; }
+                        else if (typeof next === 'number' && v === 100 && next < 100) { out.push(v + next); i++; }
+                        else out.push(v);
+                    } else if (typeof v === 'string') {
+                        out.push(v);
+                    } else if (/^[0-9]+$/.test(w)) {
+                        out.push(w);
+                    } else if (/^[\+\-]$/.test(w)) {
+                        out.push(w);
+                    }
+                }
+                return out;
+            }
+
+            // Решение примера с приоритетом операций (* и / раньше + и -)
+            solve(text) {
+                const tokens = this.normalize(text);
+                let nums = [], ops = [];
+                for (const t of tokens) {
+                    if (typeof t === 'number' || /^[0-9]+$/.test(t)) nums.push(parseFloat(t));
+                    else if (/^[\+\-\*\/]$/.test(t)) ops.push(t);
+                }
+                if (nums.length < 2 || ops.length < 1) return null;
+
+                let n = [nums[0]], o = [];
+                for (let i = 0; i < ops.length; i++) {
+                    const op = ops[i], num = nums[i+1];
+                    if (num === undefined) return null;
+                    if (op === '*') n[n.length-1] *= num;
+                    else if (op === '/') n[n.length-1] /= num;
+                    else { o.push(op); n.push(num); }
+                }
+                let res = n[0];
+                for (let i = 0; i < o.length; i++) {
+                    res = o[i] === '+' ? res + n[i+1] : res - n[i+1];
+                }
+                if (!isFinite(res)) return "На ноль делить нельзя! 🧮";
+                res = Math.round(res * 1000) / 1000;
+                return `🧮 ${text.replace(/\?+$/,'').trim()} = ${res}`;
+            }
+        }
+
+        // ============================================
+        // МОДУЛЬ 2: ТЕКСТОВЫЙ МОЗГ (НАШИ N-ГРАММЫ)
+        // ============================================
         class SmartAI {
             constructor() {
                 this.memory = JSON.parse(localStorage.getItem('ai_v2_mem')) || {};
             }
 
             clean(text) {
-                // Список "мусорных" слов от защитных экранов сайтов
-                const trash = ["javascript", "cookies", "enable", "forbidden", "access", "denied", "checking", "browser"];
+                const trash = ["javascript","cookies","enable","forbidden","access","denied","checking","browser"];
                 let words = text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 2);
-                
-                // Если в тексте слишком много мусора, мы его бракуем
                 let trashCount = words.filter(w => trash.includes(w)).length;
-                if (trashCount > words.length * 0.3) return []; 
-                
+                if (trashCount > words.length * 0.3) return [];
                 return words;
             }
 
             train(text) {
                 const words = this.clean(text);
                 if (words.length < 5) return 0;
-
                 for (let i = 0; i < words.length - 2; i++) {
                     const key = words[i] + ' ' + words[i+1];
                     const target = words[i+2];
@@ -82,56 +189,50 @@
             generate(input) {
                 const words = this.clean(input);
                 if (words.length === 0) return "Я тебя не понял. Попробуй написать яснее.";
-
                 let current = words.slice(-2).join(' ');
                 if (!this.memory[current]) {
                     const keys = Object.keys(this.memory);
                     current = keys.find(k => k.includes(words[words.length-1])) || keys[Math.floor(Math.random()*keys.length)];
                 }
-
                 if (!current) return "Я пока не знаю ничего об этом. Дай мне ссылку на статью!";
-
                 let res = current.split(' ');
                 for (let i = 0; i < 35; i++) {
                     const key = res.slice(-2).join(' ');
                     const options = this.memory[key];
                     if (!options) break;
                     const next = Object.entries(options).sort((a,b) => b[1] - a[1])[0][0];
-                    if (res.includes(next) && res.length > 10) break; 
+                    if (res.includes(next) && res.length > 10) break;
                     res.push(next);
                 }
                 return res.join(' ');
             }
         }
 
+        const math = new MathEngine();
         const ai = new SmartAI();
 
         async function learnFromURL() {
             const url = document.getElementById('urlInput').value.trim();
             const btn = document.querySelector('button[onclick="learnFromURL()"]');
             btn.innerText = "ЗАГРУЗКА...";
-            
             try {
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
                 const response = await fetch(proxyUrl);
                 const data = await response.json();
-                
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data.contents, 'text/html');
                 doc.querySelectorAll('script, style, nav, footer').forEach(el => el.remove());
                 const text = doc.body.innerText;
-
                 const count = ai.train(text);
-                if (count === 0) alert("Сайт заблокировал доступ или на нем нет текста. Попробуй другую ссылку.");
-                else alert("Обучение завершено! Новых связей: " + count);
-                
+                if (count === 0) alert("Сайт заблокировал доступ или там нет текста.");
+                else alert("Обучение завершено! Новых слов: " + count);
                 updateStats();
             } catch (e) { alert("Ошибка связи с сайтом."); }
             btn.innerText = "ИЗУЧИТЬ СТАТЬЮ";
         }
 
         function clearBrain() {
-            if(confirm("Очистить всю память ИИ?")) {
+            if (confirm("Очистить всю память ИИ?")) {
                 localStorage.removeItem('ai_v2_mem');
                 ai.memory = {};
                 updateStats();
@@ -146,23 +247,35 @@
             if (!text) return;
 
             chat.innerHTML += `<div class="msg user">${text}</div>`;
-            
-            // Если ИИ ничего не знает, пробуем быстрый поиск по Википедии сами
-            if (Object.keys(ai.memory).length < 10) {
-                const sRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(text)}&format=json&origin=*`);
-                const sData = await sRes.json();
-                if (sData.query.search[0]) {
-                    const pId = sData.query.search[0].pageid;
-                    const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${pId}&format=json&origin=*`);
-                    const pData = await pRes.json();
-                    ai.train(pData.query.pages[pId].extract);
+            inp.value = '';
+
+            // === 1. СНАЧАЛА ПРОВЕРЯЕМ МАТЕМАТИКУ ===
+            if (math.isMath(text)) {
+                const answer = math.solve(text);
+                if (answer) {
+                    chat.innerHTML += `<div class="msg ai"><span class="math-badge">Использован модуль «Калькулятор»</span>${answer}</div>`;
+                    chat.scrollTop = chat.scrollHeight;
+                    return;
                 }
             }
 
+            // === 2. ЕСЛИ НЕ МАТЕМАТИКА — ВКЛЮЧАЕМ ТЕКСТОВЫЙ МОЗГ ===
+            if (Object.keys(ai.memory).length < 10) {
+                try {
+                    const sRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(text)}&format=json&origin=*`);
+                    const sData = await sRes.json();
+                    if (sData.query.search[0]) {
+                        const pId = sData.query.search[0].pageid;
+                        const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${pId}&format=json&origin=*`);
+                        const pData = await pRes.json();
+                        ai.train(pData.query.pages[pId].extract);
+                    }
+                } catch(e) {}
+            }
+
             const reply = ai.generate(text);
-            chat.innerHTML += `<div class="msg ai">${reply}</div>`;
+            chat.innerHTML += `<div class="msg ai"><span class="math-badge">Использован модуль «Текстовый мозг»</span>${reply}</div>`;
             chat.scrollTop = chat.scrollHeight;
-            inp.value = '';
             updateStats();
         }
 
