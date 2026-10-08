@@ -2,15 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой ИИ: Центр управления Кэш-памятью (Макс 10)</title>
+    <title>Мой Умный ИИ с Кэш-инструкциями</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #090d16; color: #f1f5f9; margin: 0; display: flex; height: 100vh; }
         
-        /* ЧАТ СЛЕВА */
+        /* ЛЕВАЯ ПАНЕЛЬ: ЧАТ */
         #left-panel { flex: 1.2; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0f172a; }
         #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .msg { max-width: 85%; padding: 12px 16px; border-radius: 10px; line-height: 1.5; font-size: 15px; }
+        .msg { max-width: 85%; padding: 12px 16px; border-radius: 10px; line-height: 1.5; font-size: 15px; word-wrap: break-word; }
         .user { align-self: flex-end; background: #2563eb; color: white; }
         .ai { align-self: flex-start; background: #1e293b; border: 1px solid #334155; }
         .system-msg { align-self: center; background: #334155; color: #38bdf8; font-size: 13px; font-family: monospace; text-align: center; }
@@ -20,10 +20,11 @@
         input[type="text"] { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: white; outline: none; font-size: 14px; }
         button { padding: 12px 18px; border-radius: 8px; border: none; background: #10b981; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { background: #059669; }
+        button:disabled { background: #475569; cursor: not-allowed; }
         .cache-btn { background: #8b5cf6; }
         .cache-btn:hover { background: #7c3aed; }
 
-        /* ПАНЕЛЬ НАСТРОЕК КЭША СПРАВА */
+        /* ПРАВАЯ ПАНЕЛЬ: НАСТРОЙКИ КЭША */
         #right-panel { flex: 1.1; padding: 20px; background: #020617; overflow-y: auto; font-size: 13px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .section-title { color: #38bdf8; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
@@ -33,7 +34,6 @@
         .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
         .id-badge { background: #8b5cf6; color: white; padding: 3px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; }
         
-        /* КАРТОЧКА КЭША В НАСТРОЙКАХ */
         .cache-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
         .cache-item.active { border: 2px solid #10b981; background: #064e3b; }
         .cache-item-header { display: flex; justify-content: space-between; align-items: center; }
@@ -45,53 +45,48 @@
 </head>
 <body>
 
-    <!-- СЛЕВА: ДИАЛОГ С ИИ -->
+    <!-- ЧАТ СЛЕВА -->
     <div id="left-panel">
         <div id="chat">
-            <div class="msg ai">Привет! У меня есть система Кэш-памяти (максимум <b>10 слотов</b>). Напиши любой текст и нажми <b>"Создать Кэш-ID"</b>. Позже отправь в чат код вида <code>#KNOW-XXXX</code> для быстрой активации!</div>
+            <div class="msg ai">Привет! Теперь у меня умный нейронный мозг. Напиши инструкцию (например: <i>"В конце каждого сообщения добавляй 'мяу'"</i>) и нажми <b>"Сохранить в Кэш"</b>. Я буду строго соблюдать это правило!</div>
         </div>
         <div id="input-bar">
-            <input type="text" id="userInput" placeholder="Введите вопрос или текст для Кэш-ID..." onkeydown="if(event.key==='Enter') processMessage()">
+            <input type="text" id="userInput" placeholder="Напишите вопрос или правило для Кэш-ID..." onkeydown="if(event.key==='Enter') processMessage()">
             <div class="btn-group">
-                <button onclick="processMessage()">Отправить</button>
+                <button id="sendBtn" onclick="processMessage()">Отправить</button>
                 <button class="cache-btn" onclick="saveToCache()">Сохранить в Кэш</button>
             </div>
         </div>
     </div>
 
-    <!-- СПРАВА: НАСТРОЙКИ КЭШ-ПАМЯТИ -->
+    <!-- НАСТРОЙКИ КЭША СПРАВА -->
     <div id="right-panel">
-        
         <div class="section-header">
             <span class="section-title">⚙️ НАСТРОЙКИ КЭШ-ПАМЯТИ</span>
             <span id="slot-counter" class="slot-badge">0 / 10</span>
         </div>
 
-        <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px;">🎯 АКТИВНЫЙ ФУНДАМЕНТ ЗНАНИЙ:</div>
+        <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px;">🎯 АКТИВНОЕ ПРАВИЛО / ИНСТРУКЦИЯ:</div>
         <div id="active-cache-display" class="card">
-            <i>Кэш-ID не выбран. ИИ использует стандартные знания.</i>
+            <i>Кэш-ID не выбран. ИИ работает в стандартном режиме.</i>
         </div>
 
-        <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px;">📚 СОХРАНЕННЫЕ КЭШИ (МЕНИ ВЫБОРА):</div>
-        <div id="cache-list">
-            <!-- Список карточек кэшей будет загружен сюда -->
-        </div>
-
+        <div style="color: #38bdf8; font-weight: bold; margin-bottom: 8px;">📚 СОХРАНЕННЫЕ КЭШИ (МАКСИМУМ 10):</div>
+        <div id="cache-list"></div>
     </div>
 
     <script>
-        const MAX_SLOTS = 10; // ЖЕСТКИЙ ЛИМИТ СЛОТОВ
+        const MAX_SLOTS = 10;
 
-        // === МЕНЕДЖЕР КЭШ-ПАМЯТИ С ЛИМИТОМ В 10 СЛОТОВ ===
+        // МЕНЕДЖЕР КЭШ-ПАМЯТИ
         class CacheManager {
             constructor() {
-                this.storageKey = 'ai_knowledge_cache_v2';
-                this.activeIdKey = 'ai_active_cache_id_v2';
+                this.storageKey = 'ai_knowledge_cache_v3';
+                this.activeIdKey = 'ai_active_cache_id_v3';
                 this.caches = JSON.parse(localStorage.getItem(this.storageKey)) || {};
                 this.activeId = localStorage.getItem(this.activeIdKey) || null;
             }
 
-            // Математический генератор уникального короткого ID
             generateID(text) {
                 let hash = 0;
                 for (let i = 0; i < text.length; i++) {
@@ -102,23 +97,18 @@
                 return `#KNOW-${code}`;
             }
 
-            // Количество занятых слотов
             get count() {
                 return Object.keys(this.caches).length;
             }
 
-            // Сохранить текст в Кэш с проверкой лимита
             save(text) {
                 if (this.count >= MAX_SLOTS) {
                     return { success: false, reason: 'LIMIT_REACHED' };
                 }
 
-                const id = this.generateID(text);
-                
-                // Если с таким хэшем уже есть, чуть модифицируем
-                let finalId = id;
+                let finalId = this.generateID(text);
                 if (this.caches[finalId]) {
-                    finalId = `${id}-${Math.floor(Math.random()*10)}`;
+                    finalId = `${finalId}-${Math.floor(Math.random()*10)}`;
                 }
 
                 this.caches[finalId] = {
@@ -132,7 +122,6 @@
                 return { success: true, id: finalId };
             }
 
-            // Удалить Кэш из настроек
             delete(id) {
                 if (this.caches[id]) {
                     delete this.caches[id];
@@ -146,7 +135,6 @@
                 return false;
             }
 
-            // Установить активный ID
             setActive(id) {
                 if (id === null) {
                     this.activeId = null;
@@ -169,72 +157,19 @@
             }
         }
 
-        // === НЕЙРОМОЗГ ИИ ===
-        class NeuralMind {
-            constructor() {
-                this.weights = {};
-            }
-
-            tokenize(text) {
-                return text.toLowerCase().replace(/[^a-zа-яё0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length > 1);
-            }
-
-            train(text) {
-                const words = this.tokenize(text);
-                for (let i = 0; i < words.length - 2; i++) {
-                    const key = words[i] + ' ' + words[i+1];
-                    const next = words[i+2];
-                    if (!this.weights[key]) this.weights[key] = {};
-                    this.weights[key][next] = (this.weights[key][next] || 0) + 1;
-                }
-            }
-
-            generate(seed, maxWords = 25) {
-                const words = this.tokenize(seed);
-                const keys = Object.keys(this.weights);
-                let currentKey = keys.find(k => k.includes(words[words.length-1])) || keys[Math.floor(Math.random() * keys.length)];
-
-                if (!currentKey) return "Я изучил кэш, но пока сформулировать ответ сложно. Добавь больше текста!";
-
-                let [w1, w2] = currentKey.split(' ');
-                let result = [w1, w2];
-                let used = new Set();
-
-                for (let i = 0; i < maxWords; i++) {
-                    const key = w1 + ' ' + w2;
-                    if (used.has(key)) break;
-                    used.add(key);
-
-                    const nexts = this.weights[key];
-                    if (!nexts) break;
-
-                    const chosen = Object.entries(nexts).sort((a,b) => b[1] - a[1])[0][0];
-                    result.push(chosen);
-                    w1 = w2; w2 = chosen;
-                }
-                return result.join(' ');
-            }
-        }
-
         const cache = new CacheManager();
-        const ai = new NeuralMind();
 
-        // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА НАСТРОЕК (ПРАВАЯ ПАНЕЛЬ)
+        // ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
         function updateUI() {
             const slotCounter = document.getElementById('slot-counter');
             const activeDisplay = document.getElementById('active-cache-display');
             const cacheList = document.getElementById('cache-list');
 
-            // 1. Обновляем счетчик слотов
             const count = cache.count;
             slotCounter.innerText = `${count} / ${MAX_SLOTS}`;
-            if (count >= MAX_SLOTS) {
-                slotCounter.classList.add('full');
-            } else {
-                slotCounter.classList.remove('full');
-            }
+            if (count >= MAX_SLOTS) slotCounter.classList.add('full');
+            else slotCounter.classList.remove('full');
 
-            // 2. Отображаем активный Кэш
             if (cache.activeId) {
                 activeDisplay.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -246,13 +181,12 @@
                     </div>
                 `;
             } else {
-                activeDisplay.innerHTML = `<i>Стандартный режим (Кэш-ID не подключен).</i>`;
+                activeDisplay.innerHTML = `<i>Стандартный режим (Без дополнительных инструкций).</i>`;
             }
 
-            // 3. Рендерим список сохраненных кэшей (Макс 10)
             let listHtml = '';
             if (count === 0) {
-                listHtml = '<div class="card" style="text-align:center; opacity:0.6;">Кэшей пока нет. Сохраните первый через поле ввода!</div>';
+                listHtml = '<div class="card" style="text-align:center; opacity:0.6;">Кэшей пока нет. Добавьте первый ниже!</div>';
             } else {
                 for (let id in cache.caches) {
                     const item = cache.caches[id];
@@ -275,69 +209,52 @@
             cacheList.innerHTML = listHtml;
         }
 
-        // Сохранение кэша
         function saveToCache() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
-            if (!text) return alert("Сначала введи текст или инструкцию в поле ввода!");
+            if (!text) return alert("Сначала введите инструкцию или текст в поле ввода!");
 
             const res = cache.save(text);
             const chat = document.getElementById('chat');
 
             if (!res.success) {
-                alert(`⚠️ ЛИМИТ ПАМЯТИ ДОСТИГНУТ (${MAX_SLOTS}/${MAX_SLOTS})!\n\nУдалите хотя бы один старый Кэш в настройках справа, чтобы освободить слот.`);
+                alert(`⚠️ ЛИМИТ СЛОТОВ (${MAX_SLOTS}/${MAX_SLOTS})!\n\nУдалите один из старых Кэшей справа, чтобы освободить место.`);
                 return;
             }
 
             input.value = '';
-            chat.innerHTML += `<div class="msg system-msg">💾 СОЗДАН КЭШ-ID: <b>${res.id}</b><br>Сохранено в слот настроек и активировано!</div>`;
-            
-            rebuildAIMind();
+            chat.innerHTML += `<div class="msg system-msg">💾 СОЗДАН КЭШ-ID: <b>${res.id}</b><br>Инструкция активна!</div>`;
             updateUI();
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Быстрое включение кэша
         function loadCacheDirect(id) {
             cache.setActive(id);
             const chat = document.getElementById('chat');
             chat.innerHTML += `<div class="msg system-msg">🔄 ВКЛЮЧЕН КЭШ-ID: <b>${id}</b></div>`;
-            rebuildAIMind();
             updateUI();
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Удаление кэша
         function deleteCacheDirect(id) {
             if (confirm(`Удалить ${id} из настроек?`)) {
                 cache.delete(id);
                 const chat = document.getElementById('chat');
                 chat.innerHTML += `<div class="msg system-msg" style="color:#ef4444;">🗑️ УДАЛЕН КЭШ-ID: <b>${id}</b></div>`;
-                rebuildAIMind();
                 updateUI();
                 chat.scrollTop = chat.scrollHeight;
             }
         }
 
-        // Сбросить активный кэш в стандартный режим
         function deactivateCache() {
             cache.setActive(null);
-            rebuildAIMind();
             updateUI();
         }
 
-        // Перестройка связей ИИ под выбранный кэш
-        function rebuildAIMind() {
-            ai.weights = {};
-            const baseText = cache.getActiveText();
-            if (baseText) {
-                ai.train(baseText);
-            }
-        }
-
-        // Обработка ввода в чат
+        // ОБРАБОТЧИК ДИАЛОГА С НЕЙРОСЕТЬЮ (БЕЗ API-КЛЮЧЕЙ!)
         async function processMessage() {
             const input = document.getElementById('userInput');
+            const sendBtn = document.getElementById('sendBtn');
             const text = input.value.trim();
             if (!text) return;
 
@@ -345,53 +262,62 @@
             chat.innerHTML += `<div class="msg user">${text}</div>`;
             input.value = '';
 
-            // Команда быстрой активации через чат (#KNOW-XXXX)
+            // Переключение по коду #KNOW-XXXX
             if (text.startsWith('#KNOW-')) {
                 const targetId = text.toUpperCase();
                 if (cache.setActive(targetId)) {
-                    chat.innerHTML += `<div class="msg system-msg">✅ ВАТИВИРОВАН КЭШ-ID: <b>${targetId}</b></div>`;
-                    rebuildAIMind();
+                    chat.innerHTML += `<div class="msg system-msg">✅ АКТИВИРОВАН КЭШ-ID: <b>${targetId}</b></div>`;
                     updateUI();
                 } else {
-                    chat.innerHTML += `<div class="msg system-msg" style="color:#ef4444;">❌ Кэш <b>${targetId}</b> не найден в настройках!</div>`;
+                    chat.innerHTML += `<div class="msg system-msg" style="color:#ef4444;">❌ Кэш <b>${targetId}</b> не найден!</div>`;
                 }
                 chat.scrollTop = chat.scrollHeight;
                 return;
             }
 
-            // Обычный разговор
+            // Показываем индикатор размышления
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
-            aiMsg.innerText = 'Размышляю...';
+            aiMsg.innerText = '● ● ●';
             chat.appendChild(aiMsg);
             chat.scrollTop = chat.scrollHeight;
+            sendBtn.disabled = true;
 
-            if (cache.getActiveText()) {
-                ai.train(cache.getActiveText());
+            // Формируем системные инструкции из активного Кэш-ID
+            let systemInstruction = "Ты умный, вежливый и полезный ИИ ассистент. Отвечай понятно и по делу.";
+            const activeCacheText = cache.getActiveText();
+            if (activeCacheText) {
+                systemInstruction += ` ОБЯЗАТЕЛЬНОЕ ПРАВИЛО/ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ: ${activeCacheText}`;
             }
 
             try {
-                const sRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(text)}&format=json&origin=*`);
-                const sData = await sRes.json();
-                if (sData.query.search.length > 0) {
-                    const winner = sData.query.search[0];
-                    const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${winner.pageid}&format=json&origin=*`);
-                    const pData = await pRes.json();
-                    const wikiContent = pData.query.pages[winner.pageid].extract;
-                    ai.train(wikiContent);
-                }
-            } catch (e) {}
+                // ОТПРАВЛЯЕМ ЗАПРОС К ОТКРЫТОМУ НЕЙРОДВИЖКУ (Pollinations)
+                const response = await fetch('https://text.pollinations.ai/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: text }
+                        ],
+                        model: 'openai',
+                        seed: Math.floor(Math.random() * 1000)
+                    })
+                });
 
-            ai.train(text);
+                if (!response.ok) throw new Error("Ошибка связи");
 
-            const reply = ai.generate(text);
-            aiMsg.innerText = reply.charAt(0).toUpperCase() + reply.slice(1) + ".";
+                const replyText = await response.text();
+                aiMsg.innerText = replyText;
 
+            } catch (e) {
+                aiMsg.innerText = "Произошла ошибка при генерации ответа. Проверь подключение к интернету.";
+            }
+
+            sendBtn.disabled = false;
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Стартовая загрузка
-        rebuildAIMind();
         updateUI();
     </script>
 </body>
