@@ -2,152 +2,158 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Мой Личный Локальный ИИ</title>
+    <title>Автономный ИИ-Агент: Глобальный Поиск</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #05070a; color: #e2e8f0; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        #left-panel { flex: 1.3; display: flex; flex-direction: column; border-right: 1px solid #30363d; background: #0d1117; }
-        #chat { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .msg { max-width: 85%; padding: 14px 18px; border-radius: 12px; line-height: 1.6; font-size: 15px; border: 1px solid #30363d; }
-        .user { align-self: flex-end; background: #238636; border: none; }
-        .ai { align-self: flex-start; background: #161b22; }
+        /* ЛЕВАЯ ПАНЕЛЬ: ЧАТ */
+        #left-panel { flex: 1.5; display: flex; flex-direction: column; border-right: 1px solid #1e293b; background: #0a0f18; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .msg { max-width: 85%; padding: 14px; border-radius: 12px; line-height: 1.5; font-size: 15px; border: 1px solid #1e293b; }
+        .user { align-self: flex-end; background: #1d4ed8; color: white; border: none; }
+        .ai { align-self: flex-start; background: #1e293b; }
+        .status-tag { font-size: 10px; color: #10b981; font-family: monospace; margin-bottom: 5px; display: block; }
         
-        #input-bar { padding: 20px; background: #010409; border-top: 1px solid #30363d; }
-        .progress-container { margin-bottom: 10px; display: none; }
-        #progress-bar { width: 0%; height: 4px; background: #238636; transition: 0.3s; }
-        
-        .input-row { display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; border-radius: 8px; outline: none; }
-        button { padding: 12px 20px; border-radius: 8px; border: none; background: #238636; color: white; font-weight: bold; cursor: pointer; }
-        button:disabled { opacity: 0.5; cursor: wait; }
+        #input-bar { padding: 20px; background: #000; border-top: 1px solid #1e293b; display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; background: #0a0f18; border: 1px solid #334155; color: #fff; padding: 12px; border-radius: 8px; outline: none; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: #10b981; color: #000; }
+        button:disabled { opacity: 0.5; }
 
-        #right-panel { flex: 0.9; padding: 25px; background: #010409; overflow-y: auto; }
-        .slot-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 13px; }
-        .slot-card.active { border: 2px solid #238636; }
-        .btn-mini { padding: 4px 8px; font-size: 11px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; }
+        /* ПРАВАЯ ПАНЕЛЬ: НАСТРОЙКИ */
+        #right-panel { flex: 0.8; padding: 20px; background: #000; overflow-y: auto; font-size: 13px; }
+        .card { background: #0a0f18; border: 1px solid #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 10px; color: #3b82f6; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .log-entry { font-family: monospace; font-size: 11px; color: #94a3b8; border-bottom: 1px solid #1e293b; padding: 5px 0; }
     </style>
 </head>
 <body>
 
     <div id="left-panel">
-        <div id="status" style="padding: 10px 25px; font-size: 12px; color: #8b949e;">Ожидание загрузки мозга...</div>
-        <div class="progress-container" id="loader">
-            <div id="progress-bar"></div>
-        </div>
-        
         <div id="chat">
-            <div class="msg ai">Я — твой полностью локальный ИИ. Мои мысли не уходят в интернет. <br><br>Когда полоска сверху дойдет до конца, я смогу отвечать!</div>
-        </div>
-
-        <div id="input-bar">
-            <div class="input-row">
-                <input type="text" id="userInput" placeholder="Напиши что-нибудь..." disabled>
-                <button id="sendBtn" onclick="send()" disabled>ОТПРАВИТЬ</button>
+            <div class="msg ai">
+                <b>Автономный режим активирован.</b><br>
+                Я — твой агент. Я сам найду информацию в интернете, прочитаю сайты и составлю ответ. <br><br>
+                Настрой количество сайтов для анализа справа и задай любой вопрос!
             </div>
+        </div>
+        <div id="input-bar">
+            <input type="text" id="userInput" placeholder="Напиши сложный вопрос..." onkeydown="if(event.key==='Enter') startResearch()">
+            <button id="sendBtn" onclick="startResearch()">НАЙТИ И ОТВЕТИТЬ</button>
         </div>
     </div>
 
     <div id="right-panel">
-        <h3 style="color:#58a6ff; font-size:14px;">💾 КЭШ-СЛОТЫ (ПРАВИЛА)</h3>
-        <div id="cache-list"></div>
-        <button onclick="saveCache()" style="background:#8957e5; width:100%; margin-top:10px;" class="btn-mini">СОЗДАТЬ КЭШ ИЗ ВВОДА</button>
+        <label>⚙️ Глубина исследования</label>
+        <div class="card">
+            <input type="range" id="depth" min="1" max="10" value="3" style="width:100%">
+            <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:10px;">
+                <span>Поверхностно (1)</span>
+                <span id="depthVal" style="color:#10b981">3 сайта</span>
+                <span>Глубоко (10)</span>
+            </div>
+        </div>
+
+        <label>📡 Журнал работы агента</label>
+        <div id="agent-log" class="card" style="height: 300px; overflow-y: auto;">
+            Ожидание запроса...
+        </div>
+
+        <label>🔗 Изученные источники</label>
+        <div id="source-list" class="card" style="font-size:10px; color:#3b82f6"></div>
     </div>
 
-    <!-- ПОДКЛЮЧАЕМ ЛОКАЛЬНЫЙ ДВИЖОК -->
-    <script type="module">
-        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
+    <script>
+        const depthInput = document.getElementById('depth');
+        depthInput.oninput = () => document.getElementById('depthVal').innerText = depthInput.value + " сайта";
 
-        let generator;
-        let db = JSON.parse(localStorage.getItem('local_ai_db')) || {};
-        let activeId = localStorage.getItem('local_ai_active') || null;
-
-        // 1. ЗАГРУЗКА ЛОКАЛЬНОЙ МОДЕЛИ (МОЗГА)
-        async function loadModel() {
-            const progress = document.getElementById('progress-bar');
-            const loader = document.getElementById('loader');
-            const status = document.getElementById('status');
-            
-            loader.style.display = 'block';
-            
-            try {
-                // Мы используем самую легкую, но умную модель Qwen 0.5B
-                generator = await pipeline('text-generation', 'Xenova/Qwen1.5-0.5B-Chat', {
-                    progress_callback: (p) => {
-                        if(p.status === 'progress') {
-                            progress.style.width = p.progress + '%';
-                            status.innerText = `Загрузка мозга: ${Math.round(p.progress)}%`;
-                        }
-                    }
-                });
-                
-                status.innerText = "✅ Мозг загружен локально. Интернет больше не нужен.";
-                loader.style.display = 'none';
-                document.getElementById('userInput').disabled = false;
-                document.getElementById('sendBtn').disabled = false;
-            } catch (e) {
-                status.innerText = "❌ Ошибка загрузки. Возможно, мало памяти.";
-            }
+        function addLog(msg) {
+            const log = document.getElementById('agent-log');
+            log.innerHTML += `<div class="log-entry">[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+            log.scrollTop = log.scrollHeight;
         }
 
-        window.send = async () => {
+        // === ГЛАВНАЯ ЛОГИКА АГЕНТА ===
+        async function startResearch() {
             const inp = document.getElementById('userInput');
+            const btn = document.getElementById('sendBtn');
             const chat = document.getElementById('chat');
             const text = inp.value.trim();
+            const depth = depthInput.value;
+
             if(!text) return;
 
+            // Подготовка UI
             chat.innerHTML += `<div class="msg user">${text}</div>`;
             inp.value = '';
-            
+            btn.disabled = true;
+
             const aiMsg = document.createElement('div');
             aiMsg.className = 'msg ai';
-            aiMsg.innerText = 'Думаю локально...';
+            const status = document.createElement('span');
+            status.className = 'status-tag';
+            aiMsg.appendChild(status);
+            const content = document.createElement('div');
+            content.innerText = '● ● ●';
+            aiMsg.appendChild(content);
             chat.appendChild(aiMsg);
             chat.scrollTop = chat.scrollHeight;
 
-            // Формируем промпт с учетом твоих правил из Кэша
-            let systemRule = "Ты - полезный ИИ.";
-            if(activeId && db[activeId]) systemRule += " ПРАВИЛО: " + db[activeId].text;
-            
-            const prompt = `<|im_start|>system\n${systemRule}<|im_end|>\n<|im_start|>user\n${text}<|im_end|>\n<|im_start|>assistant\n`;
+            addLog(`Запуск исследования: "${text}"`);
+            let globalContext = "";
+            const sources = document.getElementById('source-list');
+            sources.innerHTML = "";
 
-            const output = await generator(prompt, {
-                max_new_tokens: 100,
-                temperature: 0.7,
-                do_sample: true,
-                top_k: 50,
-            });
+            try {
+                // ШАГ 1: Поиск информации (используем стабильное API Википедии)
+                status.innerText = "🌐 ПОИСК ИСТОЧНИКОВ...";
+                const searchRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(text)}&format=json&origin=*`);
+                const searchData = await searchRes.json();
+                const results = searchData.query.search.slice(0, depth);
 
-            const reply = output[0].generated_text.split('assistant\n')[1] || "Я задумался...";
-            aiMsg.innerText = reply;
+                if(results.length === 0) throw new Error("Информации не найдено");
+
+                // ШАГ 2: Чтение сайтов по очереди
+                for(let i = 0; i < results.length; i++) {
+                    const page = results[i];
+                    status.innerText = `📖 ЧИТАЮ САЙТ (${i+1}/${results.length}): ${page.title}`;
+                    addLog(`Анализ статьи: ${page.title}`);
+
+                    const pRes = await fetch(`https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&exintro&pageids=${page.pageid}&format=json&origin=*`);
+                    const pData = await pRes.json();
+                    const extract = pData.query.pages[page.pageid].extract;
+                    
+                    globalContext += `\nИнформация из источника "${page.title}": ${extract}\n`;
+                    sources.innerHTML += `<div>• ${page.title}</div>`;
+                }
+
+                // ШАГ 3: Генерация умного ответа через облачную нейросеть (без скачивания!)
+                status.innerText = "🧠 СИНТЕЗ ИТОГОВОГО ОТВЕТА...";
+                addLog("Отправка данных в нейронный центр...");
+
+                const prompt = `Ты — умный помощник. Используй следующие данные для ответа на вопрос пользователя. 
+                ДАННЫЕ: ${globalContext}
+                ВОПРОС: ${text}
+                ОТВЕТ (на русском языке, будь точен):`;
+
+                const aiRes = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?model=openai&seed=${Math.floor(Math.random()*999)}`);
+                
+                if(!aiRes.ok) throw new Error("Сбой нейросети");
+                
+                const finalAnswer = await aiRes.text();
+                content.innerText = finalAnswer;
+                status.innerText = `✅ АНАЛИЗ ЗАВЕРШЕН (${results.length} ИСТОЧНИКОВ)`;
+                addLog("Ответ успешно сформирован.");
+
+            } catch (e) {
+                content.innerText = "Ошибка: не удалось собрать данные или нейросеть занята. Попробуй еще раз.";
+                status.innerText = "❌ ОШИБКА";
+                addLog(`ОШИБКА: ${e.message}`);
+            }
+
+            btn.disabled = false;
             chat.scrollTop = chat.scrollHeight;
-        };
-
-        // Работа с кэшем
-        window.saveCache = () => {
-            const val = document.getElementById('userInput').value;
-            const id = 'ID-' + Math.random().toString(36).substr(2,4).toUpperCase();
-            db[id] = { id, text: val };
-            localStorage.setItem('local_ai_db', JSON.stringify(db));
-            updateUI();
-        };
-
-        window.activate = (id) => { activeId = id; localStorage.setItem('local_ai_active', id); updateUI(); };
-
-        function updateUI() {
-            const list = document.getElementById('cache-list');
-            list.innerHTML = '';
-            Object.keys(db).forEach(id => {
-                const active = activeId === id;
-                list.innerHTML += `<div class="slot-card ${active?'active':''}">
-                    <b>${id}</b><br>${db[id].text.substring(0,30)}...
-                    <button class="btn-mini" onclick="activate('${id}')">Включить</button>
-                </div>`;
-            });
         }
-
-        loadModel();
-        updateUI();
     </script>
 </body>
 </html>
