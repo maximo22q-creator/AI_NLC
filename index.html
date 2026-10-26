@@ -178,7 +178,7 @@
             st.className = 'status-tag';
             st.textContent = '🤖 АГЕНТ';
             const body = document.createElement('div');
-            body.textContent = text;
+            renderMarkdown(body, text);
             div.append(st, body);
             div._status = st; div._body = body;
         }
@@ -248,8 +248,55 @@
         return (out || clean.slice(0, limitChars)).trim();
     }
 
-    const isConversational = t =>
-        t.length < 60 && /^(привет|здравствуй|добрый|спасибо|пока|ок|хорошо|понял|помнишь|ты помнишь|что ты помнишь|кто ты)/i.test(t.trim());
+    /* ---------- Понимание намерения (intent) ----------
+       Раньше ЛЮБОЕ сообщение летело в поиск: на «Привет» агент честно
+       читал 3 статьи Википедии про посёлок Привет и подвесные моторы.
+       Теперь сначала классифицируем, ЧТО человек вообще хочет:
+         chat      — приветствие/болтовня/благодарность: поиск НЕ нужен
+         memory    — вопрос о самом диалоге («помнишь?»): поиск НЕ нужен
+         reasoning — загадка/математика/творчество/код: думаем сами, без поиска
+         research  — нужны внешние факты: только тогда идём в интернет
+       Приветствие + вопрос («Привет, кто такой Хагги Вагги?») разрезаем:
+       здороваемся, но ищем именно вопрос. */
+    function detectIntent(raw) {
+        let t = raw.trim();
+        const low = t.toLowerCase().replace(/\s+/g, ' ');
+
+        // Отрезаем приветствие в начале, если после него есть настоящий вопрос
+        let greeting = false;
+        const gm = low.match(/^(привет+|здравствуй(?:те)?|добрый (?:день|вечер)|доброе утро|хай|хеллоу|салют|ку)[!.,\s]+(.+)$/);
+        if (gm && gm[2].length > 4) { greeting = true; t = gm[2]; }
+        const clean = (greeting ? t.toLowerCase() : low).replace(/[!?….,\s]+$/g, '').trim();
+
+        const pure = [
+            ['greeting', /^(привет+|здравствуй(?:те)?|добрый (?:день|вечер)|доброе утро|доброй ночи|хай|хеллоу|салют|ку|здорово|приветствую)( всем| всем привет)?$/],
+            ['greeting', /^(как дела|как ты|как жизнь|что делаешь|ты тут|ты кто|кто ты|что ты умеешь|что ты можешь|представься)$/],
+            ['thanks',   /^(спасибо|благодарю|благодарствую|спс|мерси|thanks|thank you)( большое| огромное| тебе)?$/],
+            ['bye',      /^(пока|до свидания|до встречи|прощай|бай|увидимся|я пош[её]л|мне пора)$/],
+            ['ack',      /^(ок|окей|хорошо|понял[а]?|понятно|ясно|ладно|договорились|круто|класс|молодец|отлично|супер|ага|угу|да|нет|норм)$/],
+        ];
+        for (const [type, re] of pure) if (re.test(clean)) return { type, needsSearch: false, searchText: t, greeting };
+
+        if (/помнишь|мы (уже )?(обсуждали|говорили)|я (тебе )?(говорил|сказал|писал|спрашивал)|что я (спрашивал|говорил)|о ч[её]м мы/.test(low))
+            return { type: 'memory', needsSearch: false, searchText: t, greeting };
+
+        // Загадки, логика, творчество, перевод, код — тут Википедия только мешает
+        // (старый баг: загадка про Python падала с «информации не найдено»)
+        if (/загадк|отгадай|угадай|сколько будет|посчитай|вычисли|реши (пример|задачу|уравнение)|придумай|сочини|напиши (стих|рассказ|шутку|анекдот|код|программу|функцию|скрипт)|переведи|анекдот|пошути|что (ты )?думаешь|тво[её] мнение/.test(low)
+            || /^[\d\s+\-*/().=xх]+$/.test(clean))
+            return { type: 'reasoning', needsSearch: false, searchText: t, greeting };
+
+        // Явный запрос фактов из внешнего мира
+        if (/кто (такой|такая|это)|что такое|когда (родился|родилась|был[ао]?|произошл|основал|умер)|в каком году|где (находится|родился|жив[её]т)|сколько лет|расскажи (о|про|об)|найди|поищи|загугли|новости|погода|курс (валют|доллара|евро)|цена|что (это|значит)|объясни (что|кто|как работает)/.test(low))
+            return { type: 'research', needsSearch: true, searchText: t, greeting };
+
+        // Фолбэк: похоже на фактический вопрос — ищем; короткая реплика — просто болтаем
+        const kw = keywords(t);
+        return kw.length >= 2 && (t.includes('?') || kw.length >= 4)
+            ? { type: 'research', needsSearch: true, searchText: t, greeting }
+            : { type: 'chat', needsSearch: false, searchText: t, greeting };
+    }
+    const INTENT_LABEL = { greeting: '👋 приветствие', thanks: '🙏 благодарность', bye: '👋 прощание', ack: '💬 реакция', chat: '💬 просто разговор', memory: '🧠 вопрос о памяти диалога', reasoning: '🤔 загадка/рассуждение — думаю сам', research: '🔎 нужны факты — иду в интернет' };
 
     async function fetchWikiContext(query, originalText, depth, signal) {
         const searchRes = await fetch('https://ru.wikipedia.org/w/api.php?action=query&list=search&srnamespace=0&srlimit=' +
@@ -351,17 +398,20 @@
         sourcesEl.innerHTML = '';
 
         try {
-            // ШАГ 1: поиск — пропускаем для болтовни и вопросов про сам диалог
+            // ШАГ 0: понять намерение. «Привет» — это НЕ тема для исследования 🙂
+            const intent = detectIntent(text);
+            addLog('Намерение: ' + (INTENT_LABEL[intent.type] || intent.type) + (intent.greeting ? ' (+ приветствие в начале)' : ''));
+
+            // ШАГ 1: в интернет идём только если реально нужны внешние факты
             let context = '', usedSources = [];
-            const asksAboutMemory = /помнишь|мы обсуждали|я (говорил|сказал|спрашивал)|ранее|выше/i.test(text);
-            if (isConversational(text) || asksAboutMemory) {
-                setStatus('💬 ОТВЕЧАЮ ПО ПАМЯТИ ДИАЛОГА...');
-                addLog('Поиск не нужен: отвечаю по истории диалога.');
+            if (!intent.needsSearch) {
+                setStatus(intent.type === 'memory' ? '🧠 СМОТРЮ ИСТОРИЮ ДИАЛОГА...' : '💬 ПОНЯЛ, ЭТО НЕ ЗАПРОС НА ПОИСК — ОТВЕЧАЮ САМ...');
+                addLog('Поиск пропущен: намерение «' + intent.type + '» не требует интернета.');
             } else {
-                setStatus('🌐 ПОИСК ИСТОЧНИКОВ...');
-                const query = buildSearchQuery(text);
+                setStatus('🌐 ИЩУ ИСТОЧНИКИ...');
+                const query = buildSearchQuery(intent.searchText);
                 addLog('Поисковый запрос: «' + query + '»');
-                const found = await fetchWikiContext(query, text, Number(depthInput.value), signal);
+                const found = await fetchWikiContext(query, intent.searchText, Number(depthInput.value), signal);
                 context = found.context; usedSources = found.sources;
                 usedSources.forEach(s => {
                     const a = document.createElement('a');
@@ -377,8 +427,19 @@
             const userContent = context
                 ? 'ИСТОЧНИКИ ИЗ ИНТЕРНЕТА:\n' + context + '\n\nВОПРОС ПОЛЬЗОВАТЕЛЯ: ' + text
                 : text;
+            // Подсказка модели, что за тип сообщения — чтобы на приветствие
+            // она отвечала «Привет!», а не лекцией из энциклопедии
+            const intentHint = '\n\nТИП ТЕКУЩЕГО СООБЩЕНИЯ: ' + intent.type +
+                (intent.type === 'greeting' || intent.type === 'chat' || intent.type === 'thanks' || intent.type === 'bye' || intent.type === 'ack'
+                    ? '. Это обычное общение, а НЕ запрос информации: ответь коротко, тепло и естественно (на приветствие — просто поздоровайся и предложи помощь), не пересказывай энциклопедию и не выдумывай тему для лекции.'
+                    : intent.type === 'reasoning'
+                    ? '. Это загадка/задача на рассуждение: реши её сам, кратко объясни ход мысли, не ссылайся на отсутствующие источники.'
+                    : intent.type === 'memory'
+                    ? '. Пользователь спрашивает о нашем диалоге: отвечай ТОЛЬКО по истории и сводке выше.'
+                    : '. Нужен фактический ответ; если даны источники — опирайся на них.') +
+                (intent.greeting ? ' Сообщение началось с приветствия — сначала коротко поздоровайся, затем ответь на вопрос.' : '');
             const messages = [
-                { role: 'system', content: SYSTEM_PROMPT +
+                { role: 'system', content: SYSTEM_PROMPT + intentHint +
                     (summary ? '\n\nСВОДКА РАНЕЕ ОБСУЖДЁННОГО В ЭТОМ ДИАЛОГЕ:\n' + summary : '') },
                 ...history.slice(-MAX_RECENT_TURNS * 2),
                 { role: 'user', content: userContent }
